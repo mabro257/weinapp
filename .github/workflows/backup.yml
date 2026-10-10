@@ -1,0 +1,49 @@
+# Tägliches Datenbank-Backup von Supabase.
+# Läuft kostenlos auf GitHub. Die Backups liegen 30 Tage unter Actions -> Lauf -> Artifacts.
+# Nebeneffekt: Die tägliche Anfrage hält das kostenlose Supabase-Projekt aktiv.
+name: Datenbank-Backup
+
+on:
+  schedule:
+    - cron: '17 2 * * *' # täglich 02:17 UTC
+  workflow_dispatch: # zusätzlich per Knopfdruck startbar
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PostgreSQL-Werkzeuge installieren
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Backup erstellen
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          test -n "$DB_URL" || { echo "Secret SUPABASE_DB_URL fehlt"; exit 1; }
+          stamp=$(date -u +%Y-%m-%d)
+          mkdir backup
+          # Komplette App-Daten (Weine, Bewertungen, Profile, Glossar), komprimiert
+          pg_dump "$DB_URL" --schema=public --no-owner --no-privileges --format=custom --file="backup/weinapp-$stamp.dump"
+          # Nutzerliste (ohne Passwörter, die gibt es bei Code-Login ohnehin nicht)
+          psql "$DB_URL" -c "\copy (select id, email, created_at from auth.users order by created_at) to 'backup/nutzer-$stamp.csv' csv header"
+          ls -la backup
+
+      - name: Backup ablegen
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_number }}
+          path: backup/
+          retention-days: 30
+
+      - name: Supabase-Projekt aktiv halten
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ]; then echo "Kein SUPABASE_URL hinterlegt, Ping übersprungen"; exit 0; fi
+          curl -fsS "$SUPABASE_URL/rest/v1/grapes?select=id&limit=1" -H "apikey: $SUPABASE_ANON_KEY" > /dev/null && echo "Ping ok"
