@@ -5,6 +5,9 @@
 -- Kann gefahrlos wiederholt werden: bereits importierte Weine werden übersprungen.
 -- =====================================================================
 
+-- Supabase bricht lange Befehle standardmäßig nach kurzer Zeit ab; für den Import aufheben
+set statement_timeout = 0;
+
 -- 1. Seltene Rebsorten ohne Glossartext ergänzen
 create temp table imp_grapes (name text, color text);
 \copy imp_grapes from 'data/rebsorten_extra.csv' with (format csv, header)
@@ -19,7 +22,8 @@ create temp table imp (
 );
 \copy imp from 'data/katalog.csv' with (format csv, header)
 
--- Suchtext-Trigger der Rebsorten-Tabelle kurz aussetzen, Suchtext wird am Ende einmal neu berechnet
+-- Suchtext-Trigger während des Imports aussetzen, der Suchtext wird danach in einem Schritt berechnet
+alter table public.wines disable trigger wines_search;
 alter table public.wine_grapes disable trigger wine_grapes_touch;
 
 -- 3. Weine anlegen
@@ -38,10 +42,21 @@ cross join lateral unnest(string_to_array(i.grapes, '|')) with ordinality as x(g
 join public.grapes g on g.name = x.gname
 on conflict do nothing;
 
-alter table public.wine_grapes enable trigger wine_grapes_touch;
+-- 5. Suchtext für alle importierten Weine in einem Schritt berechnen (inkl. Rebsorten und Synonyme)
+update public.wines w
+set search_text = public.norm(concat_ws(' ', w.name, w.winery, w.region, w.country, gt.txt))
+from (
+  select w2.id,
+         (select string_agg(g.name || ' ' || array_to_string(g.synonyms, ' '), ' ')
+            from public.wine_grapes wg join public.grapes g on g.id = wg.grape_id
+           where wg.wine_id = w2.id) as txt
+  from public.wines w2
+  where w2.source = 'import'
+) gt
+where gt.id = w.id;
 
--- 5. Suchtext für alle importierten Weine berechnen (inkl. Rebsorten und Synonyme)
-update public.wines set name = name where source = 'import';
+alter table public.wines enable trigger wines_search;
+alter table public.wine_grapes enable trigger wine_grapes_touch;
 
 -- 6. Erfundene Beispielweine entfernen, aber nur, wenn niemand sie bewertet hat
 delete from public.wines w
