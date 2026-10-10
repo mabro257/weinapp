@@ -17,34 +17,29 @@
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
-html,
-body {
-  background: var(--color-page);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  -webkit-tap-highlight-color: transparent;
-}
+/* Grundstile in der Base-Ebene, damit Tailwind-Klassen wie text-white sie überschreiben */
+@layer base {
+  html,
+  body {
+    background: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
 
-input,
-textarea,
-button,
-select {
-  font: inherit;
-  color: inherit;
-}
+  input[type='range'] {
+    accent-color: var(--color-berry);
+  }
 
-input[type='range'] {
-  accent-color: var(--color-berry);
-}
+  :focus-visible {
+    outline: 3px solid var(--color-berry);
+    outline-offset: 2px;
+  }
 
-:focus-visible {
-  outline: 3px solid var(--color-berry);
-  outline-offset: 2px;
-}
-
-/* Textfelder: dezenter Rahmen statt dickem Fokusring */
-input:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid var(--color-rose);
-  outline-offset: 0;
+  /* Textfelder: dezenter Rahmen statt dickem Fokusring */
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--color-rose);
+    outline-offset: 0;
+  }
 }
