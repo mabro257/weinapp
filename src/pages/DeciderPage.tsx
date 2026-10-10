@@ -1,0 +1,245 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { api } from '../lib/api'
+import type { CommunityStats, Wine, WineHit } from '../lib/types'
+import { decide, type Candidate } from '../lib/decider'
+import { normalize } from '../lib/text'
+import { useAsync } from '../lib/util'
+import { useApp } from '../App'
+import { Card, CardTitle, ErrorBox, Page, PageTitle } from '../components/ui'
+import { IconCheck, IconClose } from '../components/Icons'
+
+interface Stored {
+  key: string
+  wineId: number | null
+  grapeId: number | null
+  label: string
+  price: string
+}
+
+const STORE = 'decider-karte'
+
+function loadStored(): Stored[] {
+  try {
+    return JSON.parse(sessionStorage.getItem(STORE) ?? '[]') as Stored[]
+  } catch {
+    return []
+  }
+}
+
+export default function DeciderPage() {
+  const { grapes } = useApp()
+  const [items, setItems] = useState<Stored[]>(loadStored)
+  const [q, setQ] = useState('')
+  const [hits, setHits] = useState<WineHit[]>([])
+  const [wines, setWines] = useState<Map<number, Wine>>(new Map())
+  const [comm, setComm] = useState<Map<number, CommunityStats>>(new Map())
+  const tried = useRef(new Set<number>())
+  const base = useAsync(async () => {
+    const [mine, grapeComm] = await Promise.all([api.myRatings(), api.grapeCommunity()])
+    return { mine, grapeComm }
+  }, [])
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORE, JSON.stringify(items))
+    } catch {
+      // ignorieren
+    }
+  }, [items])
+
+  // Weindaten und Community-Werte für gewählte Katalogweine nachladen
+  useEffect(() => {
+    const missing = items.flatMap((i) => (i.wineId !== null && !tried.current.has(i.wineId) ? [i.wineId] : []))
+    if (!missing.length) return
+    missing.forEach((id) => tried.current.add(id))
+    Promise.all(missing.map(async (id) => ({ id, wine: await api.getWine(id), stats: await api.wineCommunity(id) }))).then((rs) => {
+      setWines((m) => {
+        const n = new Map(m)
+        rs.forEach((r) => r.wine && n.set(r.id, r.wine))
+        return n
+      })
+      setComm((m) => {
+        const n = new Map(m)
+        rs.forEach((r) => {
+          const total = r.stats.find((s) => s.vintage === null)
+          if (total) n.set(r.id, total)
+        })
+        return n
+      })
+    })
+  }, [items])
+
+  useEffect(() => {
+    if (!q.trim()) {
+      setHits([])
+      return
+    }
+    let alive = true
+    const t = setTimeout(() => {
+      api.searchWines(q).then((r) => alive && setHits(r.slice(0, 5))).catch(() => undefined)
+    }, 250)
+    return () => {
+      alive = false
+      clearTimeout(t)
+    }
+  }, [q])
+
+  const nq = normalize(q)
+  const grapeHits = nq.length >= 2 ? grapes.filter((g) => normalize([g.name, ...g.synonyms].join(' ')).includes(nq)).slice(0, 3) : []
+
+  const add = (s: Omit<Stored, 'key' | 'price'>) => {
+    setItems((cur) => [...cur, { ...s, key: `${Date.now()}-${cur.length}`, price: '' }])
+    setQ('')
+  }
+
+  const candidates: Candidate[] = items.map((i) => {
+    const wine = i.wineId !== null ? wines.get(i.wineId) ?? null : null
+    const grapeName = grapes.find((g) => g.id === (wine?.grapeIds[0] ?? i.grapeId))?.name
+    const sub = wine
+      ? [wine.winery, grapeName, wine.region].filter(Boolean).join(' · ')
+      : 'Nur Rebsorte bekannt'
+    return { key: i.key, label: i.label, sub, wine, grapeId: i.grapeId, price: i.price }
+  })
+
+  const results = useMemo(() => {
+    if (!base.data || candidates.length < 2) return []
+    return decide(candidates, base.data.mine, grapes, base.data.grapeComm, comm)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base.data, items, wines, comm, grapes])
+
+  const priceOf = (key: string) => items.find((i) => i.key === key)?.price
+
+  return (
+    <Page>
+      <PageTitle title="Restaurant-Decider" sub="Welcher Wein von der Karte passt zu dir?" />
+      {base.error && <ErrorBox message={base.error} />}
+
+      <div className="flex flex-col gap-4 px-4 pt-5">
+        <Card className="flex flex-col gap-1">
+          <CardTitle
+            right={
+              items.length > 0 ? (
+                <button type="button" onClick={() => setItems([])} className="min-h-11 text-sm font-bold text-berry">
+                  Leeren
+                </button>
+              ) : undefined
+            }
+          >
+            Weine von der Karte
+          </CardTitle>
+          <div className="pt-2">
+            {items.map((it, idx) => {
+              const c = candidates[idx]
+              return (
+                <div key={it.key} className="flex items-center gap-3 border-t border-line py-3">
+                  <div className="flex size-8 flex-none items-center justify-center rounded-full bg-chip text-sm font-extrabold text-ink-2">{idx + 1}</div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="text-[15px] font-bold">{it.label}</div>
+                    <div className="truncate text-[13px] text-muted">{c.sub}</div>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${it.wineId ? 'bg-chip text-ink-2' : 'bg-rose-badge text-berry-dark'}`}>
+                        {it.wineId ? 'aus dem Katalog' : 'nur Rebsorte'}
+                      </span>
+                      <label className="sr-only" htmlFor={`preis-${it.key}`}>Preis laut Karte</label>
+                      <input
+                        id={`preis-${it.key}`}
+                        inputMode="decimal"
+                        placeholder="Preis €"
+                        value={it.price}
+                        onChange={(e) => setItems((cur) => cur.map((x) => (x.key === it.key ? { ...x, price: e.target.value } : x)))}
+                        className="h-8 w-20 rounded-full border-0 bg-chip px-3 text-xs font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+                  <button type="button" aria-label={`${it.label} entfernen`} onClick={() => setItems((cur) => cur.filter((x) => x.key !== it.key))} className="flex size-11 flex-none items-center justify-center rounded-full text-muted">
+                    <IconClose size={18} />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+
+          <label htmlFor="karte" className="sr-only">Wein oder Rebsorte hinzufügen</label>
+          <input
+            id="karte"
+            type="search"
+            autoComplete="off"
+            placeholder={items.length ? 'Weiteren Wein oder Rebsorte hinzufügen' : 'Wein oder Rebsorte von der Karte'}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="mt-2 h-12 w-full rounded-full border-0 bg-chip px-[18px] text-base outline-none"
+          />
+          {(hits.length > 0 || grapeHits.length > 0) && (
+            <div className="flex flex-col pt-1">
+              {grapeHits.map((g) => (
+                <button key={`g${g.id}`} type="button" onClick={() => add({ wineId: null, grapeId: g.id, label: g.name })} className="flex min-h-11 items-center justify-between gap-2 border-b border-line py-2 text-left">
+                  <span className="text-[15px] font-bold">{g.name}</span>
+                  <span className="text-xs font-semibold text-muted">nur Rebsorte</span>
+                </button>
+              ))}
+              {hits.map((h) => (
+                <button key={`w${h.id}`} type="button" onClick={() => add({ wineId: h.id, grapeId: null, label: h.name })} className="flex min-h-11 flex-col items-start gap-0.5 border-b border-line py-2 text-left">
+                  <span className="text-[15px] font-bold">{h.name}</span>
+                  <span className="text-[13px] text-muted">{[h.winery, h.mainGrape, h.region].filter(Boolean).join(' · ')}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {items.length < 2 && <div className="pt-3 text-[13px] text-muted">Füge mindestens zwei Weine hinzu. Ist ein Wein nicht im Katalog, wähle einfach seine Rebsorte.</div>}
+        </Card>
+
+        {results.length > 0 && (
+          <>
+            <h2 className="m-0 mt-2 px-1 text-lg font-bold">Empfehlung</h2>
+            {results.map((r, i) =>
+              i === 0 ? (
+                <section key={r.key} className="flex flex-col gap-3.5 rounded-[28px] bg-hero px-5 py-[22px] text-white">
+                  <div className="flex items-center gap-4">
+                    <div className="flex size-16 flex-none flex-col items-center justify-center rounded-[20px] bg-white text-hero">
+                      <span className="text-2xl leading-none font-extrabold">{r.score}</span>
+                      <span className="text-[10px] font-bold">Passung</span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <span className="self-start rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold">Beste Wahl · Sicherheit {r.confidence}</span>
+                      <span className="text-xl font-extrabold">{r.label}</span>
+                      <span className="text-sm opacity-90">{[r.sub, priceOf(r.key) ? `${priceOf(r.key)} €` : ''].filter(Boolean).join(' · ')}</span>
+                    </div>
+                  </div>
+                  <div className="h-px bg-white/20" />
+                  {r.reasons.map((w) => (
+                    <div key={w} className="flex items-start gap-2.5 text-sm leading-normal">
+                      <IconCheck size={18} className="mt-px flex-none" />
+                      <span>{w}</span>
+                    </div>
+                  ))}
+                </section>
+              ) : (
+                <Card key={r.key} className="flex flex-col gap-3">
+                  <div className="flex items-center gap-4">
+                    <div className="flex size-14 flex-none flex-col items-center justify-center rounded-[18px] bg-rose-badge text-berry">
+                      <span className="text-[21px] leading-none font-extrabold">{r.score}</span>
+                      <span className="text-[10px] font-bold">Passung</span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-[17px] font-extrabold">{r.label}</span>
+                      <span className="text-[13px] text-muted">{[r.sub, priceOf(r.key) ? `${priceOf(r.key)} €` : ''].filter(Boolean).join(' · ')}</span>
+                    </div>
+                  </div>
+                  {r.reasons.map((w) => (
+                    <div key={w} className="flex items-start gap-2.5 text-sm leading-normal text-ink-2">
+                      <span className="mt-2 size-1.5 flex-none rounded-full bg-berry" />
+                      <span>{w}</span>
+                    </div>
+                  ))}
+                </Card>
+              ),
+            )}
+            <div className="px-1 text-[13px] leading-normal text-muted">
+              Grundlage sind deine {base.data?.mine.length ?? 0} Bewertungen. Die Community-Noten fließen nur ergänzend ein. Der Preis wird angezeigt, aber nicht bewertet.
+            </div>
+          </>
+        )}
+      </div>
+    </Page>
+  )
+}
