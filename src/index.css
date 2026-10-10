@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --color-page: #F4F2F7;
+  --color-card: #FFFFFF;
+  --color-berry: #8E2A4B;
+  --color-hero: #7A1F3D;
+  --color-berry-dark: #6C1E38;
+  --color-rose: #F1DCE3;
+  --color-rose-badge: #F6E3E9;
+  --color-ink: #1E1B24;
+  --color-ink-2: #4A4455;
+  --color-muted: #6B6475;
+  --color-line: #EEE9F0;
+  --color-chip: #F4F2F7;
+  --color-dash: #D9CFDD;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea,
+button,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+input[type='range'] {
+  accent-color: var(--color-berry);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-berry);
+  outline-offset: 2px;
+}
+
+/* Textfelder: dezenter Rahmen statt dickem Fokusring */
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-rose);
+  outline-offset: 0;
+}
