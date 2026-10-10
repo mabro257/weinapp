@@ -88,7 +88,11 @@ export default function GrapePage() {
 
         <Card className="flex flex-col gap-4">
           <h2 className="m-0 text-lg font-bold">Kurzprofil</h2>
-          {grape.short && <p className="m-0 text-[15px] leading-relaxed">{grape.short}</p>}
+          {grape.short ? (
+            <p className="m-0 text-[15px] leading-relaxed">{grape.short}</p>
+          ) : (
+            <p className="m-0 text-[15px] leading-relaxed text-muted">Für diese seltene Rebsorte gibt es noch keinen Glossartext. Der Admin kann ihn in Supabase in der Tabelle „grapes" ergänzen.</p>
+          )}
           {grape.aromas.length > 0 && (
             <div className="flex flex-col gap-2">
               <div className="text-[13px] font-bold text-muted">Typische Aromen</div>

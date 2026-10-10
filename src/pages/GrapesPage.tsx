@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { summarize, type BoxSummary } from '../lib/stats'
@@ -32,29 +32,31 @@ export default function GrapesPage() {
       return mb - ma
     })
 
-  // VerlÃ¤sslichster Treffer: hoher Median, geringe Streuung
+  // Verlässlichster Treffer: hoher Median, geringe Streuung
   const best = rows
     .filter((r) => r.s.kind === 'box')
     .map((r) => ({ ...r, value: r.s.kind === 'box' ? r.s.median - 0.5 * r.s.iqr : 0 }))
     .sort((a, b) => b.value - a.value)[0]
 
   const nq = normalize(q)
+  // Ohne Suche nur Rebsorten mit Glossartext oder eigenen Bewertungen; seltene Sorten aus dem Katalog erst bei Suche
   const az = grapes
-    .filter((g) => !nq || normalize([g.name, ...g.synonyms].join(' ')).includes(nq))
+    .filter((g) => (nq ? normalize([g.name, ...g.synonyms].join(' ')).includes(nq) : g.short !== null || stats.has(g.id)))
     .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+  const hiddenCount = nq ? 0 : grapes.length - az.length
 
   return (
     <Page>
-      <PageTitle title="Rebsorten" sub="Wie zuverlÃ¤ssig trifft eine Rebsorte deinen Geschmack?" />
+      <PageTitle title="Rebsorten" sub="Wie zuverlässig trifft eine Rebsorte deinen Geschmack?" />
       {mine.error && <ErrorBox message={mine.error} />}
 
       <div className="flex flex-col gap-4 px-4 pt-5">
         {best && best.s.kind === 'box' && best.grape && (
           <Link to={`/rebsorten/${best.grape.id}`} className="flex flex-col gap-1.5 rounded-[28px] bg-hero p-5 text-white no-underline">
-            <span className="text-[13px] font-bold opacity-90">Dein verlÃ¤sslichster Treffer</span>
+            <span className="text-[13px] font-bold opacity-90">Dein verlässlichster Treffer</span>
             <span className="text-2xl font-extrabold">{best.grape.name}</span>
             <span className="text-sm leading-normal opacity-95">
-              Median {Math.round(best.s.median)}. Die mittlere HÃ¤lfte deiner Bewertungen liegt zwischen {Math.round(best.s.q1)} und {Math.round(best.s.q3)}.
+              Median {Math.round(best.s.median)}. Die mittlere Hälfte deiner Bewertungen liegt zwischen {Math.round(best.s.q1)} und {Math.round(best.s.q3)}.
             </span>
           </Link>
         )}
@@ -68,7 +70,7 @@ export default function GrapesPage() {
               to={`/rebsorten/${grape!.id}`}
               aria-label={
                 s.kind === 'box'
-                  ? `${grape!.name}: ${s.n} Bewertungen, Median ${Math.round(s.median)}, mittlere HÃ¤lfte ${Math.round(s.q1)} bis ${Math.round(s.q3)}`
+                  ? `${grape!.name}: ${s.n} Bewertungen, Median ${Math.round(s.median)}, mittlere Hälfte ${Math.round(s.q1)} bis ${Math.round(s.q3)}`
                   : `${grape!.name}: ${s.n} Bewertungen: ${s.values.join(', ')}`
               }
               className="flex min-h-11 items-center gap-2.5 text-ink no-underline"
@@ -76,7 +78,7 @@ export default function GrapesPage() {
               <span className="flex w-[120px] flex-none flex-col gap-px">
                 <span className="truncate text-sm font-bold">{grape!.name}</span>
                 <span className="text-xs text-muted">
-                  {s.n} Bew. Â· {s.kind === 'box' ? `Median ${Math.round(s.median)}` : 'zu wenig'}
+                  {s.n} Bew. · {s.kind === 'box' ? `Median ${Math.round(s.median)}` : 'zu wenig'}
                 </span>
               </span>
               <Boxplot s={s} />
@@ -89,12 +91,16 @@ export default function GrapesPage() {
             </div>
           )}
           <div className="rounded-[18px] bg-chip px-3.5 py-3 text-xs leading-normal text-ink-2">
-            Box: mittlere HÃ¤lfte deiner Bewertungen. Strich: Median. Linien: Spannweite. Offener Punkt: AusreiÃŸer (ab 10 Bewertungen). Unter 5 Bewertungen siehst du nur Einzelpunkte.
+            Box: mittlere Hälfte deiner Bewertungen. Strich: Median. Linien: Spannweite. Offener Punkt: Ausreißer (ab 10 Bewertungen). Unter 5 Bewertungen siehst du nur Einzelpunkte.
           </div>
         </Card>
 
         <Card className="pb-1">
-          <h2 className="m-0 mb-3 text-lg font-bold">Alle Rebsorten</h2>
+          <h2 className="m-0 mb-1 text-lg font-bold">Alle Rebsorten</h2>
+          <p className="m-0 mb-3 text-[13px] leading-snug text-muted">
+            {grapes.length} Rebsorten im Katalog.
+            {hiddenCount > 0 && ` Seltene Sorten ohne Glossartext (${hiddenCount}) findest du über die Suche.`}
+          </p>
           <label htmlFor="rsuche" className="sr-only">Rebsorte suchen</label>
           <input id="rsuche" type="search" placeholder="Rebsorte suchen, auch Synonyme" value={q} onChange={(e) => setQ(e.target.value)} className="mb-2 h-12 w-full rounded-full border-0 bg-chip px-[18px] text-base outline-none" />
           {az.map((g) => {
