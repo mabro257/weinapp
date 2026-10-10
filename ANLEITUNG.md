@@ -11,6 +11,7 @@ Stand 10.10.2026. Alles läuft im Browser, du musst nichts installieren.
 5. [Netlify mit Supabase verbinden](#teil-5--netlify-mit-supabase-verbinden) (5 Minuten)
 6. [Admin-Rechte und automatisches Backup](#teil-6--admin-rechte-und-backup) (10 Minuten)
 7. [Auf dem Handy installieren](#teil-7--app-auf-dem-handy-installieren)
+8. [Großen Weinkatalog importieren](#teil-8--großen-weinkatalog-importieren) (10 Minuten)
 
 Nach Teil 2 läuft die App schon online mit Beispieldaten. Du kannst sie testen, bevor die Datenbank steht.
 
@@ -76,7 +77,7 @@ Die drei SQL-Dateien liegen im Ordner `supabase` der ZIP-Datei. Reihenfolge einh
 
 1. Links im Menü **SQL Editor** öffnen → **New query**.
 2. Den kompletten Inhalt von **`01_schema.sql`** hineinkopieren → **Run** (oder Strg + Enter). Unten muss „Success. No rows returned" stehen.
-3. Neue Query → Inhalt von **`02_glossar.sql`** → **Run**. Das legt die 27 Rebsorten mit Glossartexten an.
+3. Neue Query → Inhalt von **`02_glossar.sql`** → **Run**. Das legt die Rebsorten mit Glossartexten an. Als Ergebnis erscheint `setval` mit der höchsten Rebsorten-ID, das ist richtig.
 4. Neue Query → Inhalt von **`03_beispielweine.sql`** → **Run**. Das legt 25 Beispielweine an, bis der große Katalog importiert ist.
 5. Prüfen: Links **Table Editor** → Tabelle `wines` zeigt 25 Zeilen, `grapes` zeigt 27 Zeilen.
 
@@ -92,7 +93,7 @@ Die App nutzt einen 6-stelligen Code statt eines Links. So funktioniert die Anme
    - **Email OTP Length:** `6`
    - **Email OTP Expiration:** `3600` (1 Stunde)
    - **Save**
-2. **Authentication** → **Emails** (bzw. **Email Templates**). Zwei Vorlagen anpassen, **Confirm signup** und **Magic link**. In beiden:
+2. **Authentication** → **Emails** (bzw. **Email Templates**). Die Vorlagen lassen sich erst bearbeiten, wenn der eigene Mailversand aus **Teil 4** eingerichtet ist. Dann zwei Vorlagen anpassen, **Confirm signup** (erste Anmeldung) und **Magic Link** (jede weitere Anmeldung). Beim Body von **Preview** auf **Source** umschalten. In beiden:
    - **Subject:** `Dein Anmeldecode für die Weinbewertung`
    - **Body** komplett ersetzen durch:
 
@@ -206,6 +207,21 @@ Alle Bewertungen ziehen zum richtigen Wein um. Der doppelte Eintrag verschwindet
 - **Android (Chrome):** Adresse öffnen → **Drei-Punkte-Menü** → **App installieren** bzw. **Zum Startbildschirm hinzufügen**.
 
 Danach öffnet sich die App ohne Browserleiste. Anmelden musst du dich einmal **in der installierten App**. Sie hat ihren eigenen Speicher und übernimmt die Anmeldung aus Safari nicht.
+
+---
+
+## Teil 8 · Großen Weinkatalog importieren
+
+Der Katalog stammt aus dem offenen Datensatz **X-Wines** (Lizenz CC0, Stand 2022): 100.646 Weine aus 62 Ländern mit Weingut, Region, Rebsorten, Körper und Säure. Die Daten liegen fertig aufbereitet im Ordner `data`. Rebsorten-Namen sind auf das Glossar abgebildet (Pinot Noir → Spätburgunder usw.), Lugana-Weine auf Turbiana. Die Datenbank wächst dadurch auf etwa 105 MB, das kostenlose Limit liegt bei 500 MB.
+
+1. **Supabase → SQL Editor:** nacheinander ausführen
+   - `02_glossar.sql` (erneut, jetzt mit 134 Rebsorten)
+   - `04_update_suche.sql` (schnellere Suche für den großen Katalog)
+2. **GitHub → Actions → links „Katalog-Import" → Run workflow → Run workflow.** Dauert 2 bis 5 Minuten.
+3. Grüner Haken = fertig. Im Protokoll des Schritts „Katalog importieren" stehen am Ende die Zahlen, etwa `importierte_weine 100646`.
+4. App neu laden und z. B. nach „Lugana" suchen.
+
+Die erfundenen Beispielweine werden dabei entfernt, außer jemand hat sie schon bewertet. Ein zweiter Lauf schadet nicht, bereits importierte Weine werden übersprungen.
 
 ---
 

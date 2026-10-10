@@ -33,7 +33,7 @@ Ohne Umgebungsvariablen läuft die App im **Demo-Modus** mit Beispieldaten im Br
 | Community | Durchschnitt aller Nutzer je Wein und Jahrgang über eine Datenbankfunktion. Einzelbewertungen, Notizen und Orte anderer bleiben privat. |
 | Boxplots | Quartile inklusiv (wie Excel `QUARTILE.INC`). Unter 5 Werten nur Punkte, 5–9 Werte Linien Min–Max, ab 10 Werten Tukey (1,5 × IQR) mit Ausreißern. Mehrfachbewertungen zählen einzeln. Achse 70–100. |
 | Decider | Regelbasiert: Hauptrebsorte 45 %, Region 20 %, Geschmacksnähe 15 %, Community 20 %. Wenige Bewertungen werden zum eigenen Schnitt hin gedämpft. Jede Empfehlung mit Begründung und Sicherheitsstufe. Der Preis wird angezeigt, aber nicht bewertet. |
-| Glossar | 27 Rebsorten, Texte von Claude, vom Admin zu prüfen (`src/lib/grapesData.ts`, daraus `supabase/02_glossar.sql`). |
+| Glossar | 134 Rebsorten mit Texten von Claude, vom Admin zu prüfen (`src/lib/grapesData.ts`, daraus `supabase/02_glossar.sql`). Weitere 569 seltene Sorten aus dem Katalog ohne Text, nur über die Suche sichtbar. Lugana = Rebsorte Turbiana. |
 | Design | Entwurf A: hell, rund, eine Akzentfarbe Beere `#8E2A4B`, Plus Jakarta Sans. Breite fließend, auf großen Bildschirmen auf 576 px begrenzt. |
 | Deployment | Zuerst Demo-Modus, dann Supabase. Änderungen gesammelt hochladen (Netlify: 15 Credits pro Veröffentlichung, 300 pro Monat). |
 
@@ -54,7 +54,7 @@ Getestet am 10.10.2026 gegen Postgres (PGlite) mit nachgebauter Supabase-Umgebun
 1. ✅ Datenmodell, Schema, Zugriffsregeln
 2. ✅ Projekt-Setup (Vite, React, TS, Tailwind, PWA, Netlify-Konfiguration)
 3. ✅ Anmeldung per E-Mail-Code, Profil
-4. ⏳ **Großer Katalogimport** aus X-Wines (CC0, ~100.000 Weine, Länder nicht zu streng filtern). Vorschlag: Claude bereitet eine SQL-Importdatei vor, die im SQL Editor ausgeführt wird. Rebsorten-Namen werden dabei auf das Glossar gemappt.
+4. ✅ **Großer Katalogimport** aus X-Wines (CC0, 100.646 Weine, alle Länder). Daten in `data/`, Import per GitHub Action „Katalog-Import" (`supabase/05_katalog_import.sql`). 95 % der Rebsorten-Angaben sind auf Glossar-Sorten abgebildet. Getestet gegen Postgres: Import ca. 40 s, Datenbank ca. 105 MB, Suche 0,1 bis 0,6 s.
 5. ✅ Bewertungsablauf inkl. Foto, Tags, Jahrgang
 6. ✅ Detailseite nach Entwurf A
 7. ✅ Restaurant-Decider
