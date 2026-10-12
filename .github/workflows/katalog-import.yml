@@ -26,7 +26,20 @@ jobs:
           DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           test -n "$DB_URL" || { echo "Secret SUPABASE_DB_URL fehlt"; exit 1; }
-          gunzip -k data/katalog.csv.gz
+          # Dateien suchen, egal in welchem Ordner sie hochgeladen wurden, und nach data/ legen
+          echo "Dateien im Repository:"; find . -path ./.git -prune -o -type f -print | sort
+          find_one() { find . -path ./.git -prune -o -type f -name "$1" -print | head -n 1; }
+          gz=$(find_one katalog.csv.gz); off=$(find_one off_katalog.csv.gz); extra=$(find_one rebsorten_extra.csv); script=$(find_one 05_katalog_import.sql)
+          test -n "$gz" || { echo "katalog.csv.gz fehlt im Repository"; exit 1; }
+          test -n "$off" || { echo "off_katalog.csv.gz fehlt im Repository"; exit 1; }
+          test -n "$extra" || { echo "rebsorten_extra.csv fehlt im Repository"; exit 1; }
+          test -n "$script" || { echo "05_katalog_import.sql fehlt im Repository"; exit 1; }
+          mkdir -p data
+          [ "$gz" = "./data/katalog.csv.gz" ] || cp "$gz" data/katalog.csv.gz
+          [ "$off" = "./data/off_katalog.csv.gz" ] || cp "$off" data/off_katalog.csv.gz
+          [ "$extra" = "./data/rebsorten_extra.csv" ] || cp "$extra" data/rebsorten_extra.csv
+          gunzip -kf data/katalog.csv.gz
+          gunzip -kf data/off_katalog.csv.gz
           wc -l data/katalog.csv
           # Alles in einer Transaktion: bei einem Fehler bleibt die Datenbank unverändert
-          psql "$DB_URL" -v ON_ERROR_STOP=1 --single-transaction -f supabase/05_katalog_import.sql
+          psql "$DB_URL" -v ON_ERROR_STOP=1 --single-transaction -f "$script"
