@@ -12,6 +12,7 @@ Stand 10.10.2026. Alles läuft im Browser, du musst nichts installieren.
 6. [Admin-Rechte und automatisches Backup](#teil-6--admin-rechte-und-backup) (10 Minuten)
 7. [Auf dem Handy installieren](#teil-7--app-auf-dem-handy-installieren)
 8. [Großen Weinkatalog importieren](#teil-8--großen-weinkatalog-importieren) (10 Minuten)
+9. [Update vom 12.10.2026](#teil-9--update-vom-12102026-geschmack-merkliste-open-food-facts)
 
 Nach Teil 2 läuft die App schon online mit Beispieldaten. Du kannst sie testen, bevor die Datenbank steht.
 
@@ -222,6 +223,17 @@ Der Katalog stammt aus dem offenen Datensatz **X-Wines** (Lizenz CC0, Stand 2022
 4. App neu laden und z. B. nach „Lugana" suchen.
 
 Die erfundenen Beispielweine werden dabei entfernt, außer jemand hat sie schon bewertet. Ein zweiter Lauf schadet nicht, bereits importierte Weine werden übersprungen.
+
+---
+
+## Teil 9 · Update vom 12.10.2026 (Geschmack, Merkliste, Open Food Facts)
+
+1. Netlify: **Stop builds**.
+2. Auf GitHub die Ordner aus `weinapp-update-2.zip` hochladen (Ordner für Ordner, siehe Tabelle in der Nachricht von Claude). Gleichnamige Dateien werden überschrieben.
+3. Netlify: **Activate builds** → Deploys → **Trigger deploy** → **Deploy project**. Unter **Deploys** muss oben ein neuer Eintrag mit Status **Published** stehen.
+4. Supabase → SQL Editor: `07_update_merkliste_suche.sql` ausführen.
+5. GitHub → Actions → **Katalog-Import** → Run workflow. Bereits vorhandene Weine werden übersprungen, neu kommen ca. 5.900 Weine aus Open Food Facts dazu.
+6. Am Handy die App einmal komplett schließen und neu öffnen, damit die neue Version geladen wird.
 
 ---
 

@@ -61,6 +61,15 @@ Getestet am 10.10.2026 gegen Postgres (PGlite) mit nachgebauter Supabase-Umgebun
 8. ✅ Glossar und Boxplots
 9. ⏳ Online bringen nach `ANLEITUNG.md`, Test mit dem Freundeskreis
 
+## Update 12.10.2026
+
+- Reiter **Geschmack** statt Rebsorten: Geschmacksprofil, Matrix Körper × Säure, „Probier mal"-Empfehlungen, Verlässlichkeit je Rebsorte (seltene Sorten zusammengefasst).
+- **Glossar** nach Farbe und Stilgruppe geordnet (je 4 Gruppen für Rot und Weiß), seltene Sorten nur über die Suche.
+- **Suche**: Etikettbild bzw. farbiges Glas als Vorschau, beste Treffer oben und fett.
+- **Merkliste**: Weine merken (Tabelle `saved_wines`), Liste unter „Ich".
+- **Open Food Facts** (ODbL): ca. 5.900 zusätzliche Weine, Quellenhinweis unter „Ich".
+- Jacques' Wein-Depot: kein automatischer Abzug des Sortiments (Datenbankrecht § 87b UrhG), stattdessen Abgleich gekaufter Weine auf Zuruf.
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.
