@@ -11,6 +11,13 @@ import NewWinePage from './pages/NewWinePage'
 import DeciderPage from './pages/DeciderPage'
 import GrapesPage from './pages/GrapesPage'
 import TastePage from './pages/TastePage'
+import FriendsPage from './pages/FriendsPage'
+import GroupPage from './pages/GroupPage'
+import JoinPage from './pages/JoinPage'
+import TwinsPage from './pages/TwinsPage'
+import BadgesPage from './pages/BadgesPage'
+import TastingNewPage from './pages/TastingNewPage'
+import TastingPage from './pages/TastingPage'
 import GrapePage from './pages/GrapePage'
 import HistoryPage from './pages/HistoryPage'
 
@@ -71,6 +78,13 @@ export default function App() {
           <Route path="/wein/:id/bewerten" element={<RatePage />} />
           <Route path="/decider" element={<DeciderPage />} />
           <Route path="/geschmack" element={<TastePage />} />
+          <Route path="/freunde" element={<FriendsPage />} />
+          <Route path="/gruppe/:id" element={<GroupPage />} />
+          <Route path="/beitreten/:code" element={<JoinPage />} />
+          <Route path="/zwillinge" element={<TwinsPage />} />
+          <Route path="/abzeichen" element={<BadgesPage />} />
+          <Route path="/weinabend/neu" element={<TastingNewPage />} />
+          <Route path="/weinabend/:id" element={<TastingPage />} />
           <Route path="/rebsorten" element={<GrapesPage />} />
           <Route path="/rebsorten/:id" element={<GrapePage />} />
           <Route path="/ich" element={<HistoryPage />} />
