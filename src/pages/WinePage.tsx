@@ -7,7 +7,7 @@ import { mean } from '../lib/stats'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
 import { Card, CardTitle, ErrorBox, Hint, HeroBack, Loading, Page, ScoreRing, TagChip, TasteBar } from '../components/ui'
-import { IconPlus, IconTrash } from '../components/Icons'
+import { IconBookmark, IconPlus, IconTrash } from '../components/Icons'
 
 export default function WinePage() {
   const id = Number(useParams().id)
@@ -15,9 +15,11 @@ export default function WinePage() {
   const [vintage, setVintage] = useState<number | 'alle'>('alle')
   const [showAll, setShowAll] = useState(false)
 
+  const [savedOverride, setSavedOverride] = useState<boolean | null>(null)
   const res = useAsync(async () => {
-    const [wine, community, mine] = await Promise.all([api.getWine(id), api.wineCommunity(id), api.myRatings()])
-    return { wine, community, mine: mine.filter((r) => r.wineId === id) }
+    const [wine, community, mine, isSaved] = await Promise.all([api.getWine(id), api.wineCommunity(id), api.myRatings(), api.isSaved(id)])
+    setSavedOverride(null)
+    return { wine, community, mine: mine.filter((r) => r.wineId === id), isSaved }
   }, [id])
 
   const view = useMemo(() => {
@@ -39,6 +41,17 @@ export default function WinePage() {
   const grapeChips = wine.grapeIds.map((g) => grapes.find((x) => x.id === g)).filter((g) => g !== undefined)
   const hasTaste = (['body', 'acidity', 'tannin'] as TasteKey[]).some((k) => view.tasteMine(k) !== null || (view.comm && view.comm[k] !== null))
   const shown = showAll ? view.rows : view.rows.slice(0, 3)
+  const saved = savedOverride ?? res.data.isSaved
+
+  const toggleSaved = async () => {
+    const next = !saved
+    setSavedOverride(next)
+    try {
+      await api.setSaved(wine.id, next)
+    } catch {
+      setSavedOverride(!next)
+    }
+  }
 
   const remove = async (ratingId: number) => {
     if (!confirm('Diese Bewertung wirklich löschen?')) return
@@ -51,6 +64,15 @@ export default function WinePage() {
       <div className="flex flex-col gap-3 rounded-b-[36px] bg-hero px-5 pt-5 pb-[72px] text-white">
         <div className="mb-3 flex items-center justify-between">
           <HeroBack />
+          <button
+            type="button"
+            aria-pressed={saved}
+            onClick={toggleSaved}
+            className="flex h-11 items-center gap-2 rounded-full bg-white/15 px-4 text-sm font-bold text-white"
+          >
+            <IconBookmark size={20} filled={saved} />
+            {saved ? 'Gemerkt' : 'Merken'}
+          </button>
         </div>
         <div className="flex items-end gap-3.5">
           <div className="flex min-w-0 flex-1 flex-col gap-3">

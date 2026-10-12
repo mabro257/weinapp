@@ -5,7 +5,7 @@ import type { WineHit } from '../lib/types'
 import { formatDate } from '../lib/text'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
-import { Card, CardTitle, Page, ScoreBadge } from '../components/ui'
+import { Card, CardTitle, Page, ScoreBadge, WineThumb } from '../components/ui'
 import { IconClose, IconNext, IconPlus, IconScale, IconSearch } from '../components/Icons'
 
 function greeting() {
@@ -82,16 +82,24 @@ export default function HomePage() {
           <div className="flex flex-col rounded-[28px] bg-card px-4 py-2">
             {searchError && <div className="py-3 text-sm font-semibold text-berry-dark">{searchError}</div>}
             {hits === null && !searchError && <div className="py-3 text-sm text-muted">Suche …</div>}
-            {hits?.map((w) => (
-              <Link key={w.id} to={`/wein/${w.id}`} className="flex min-h-11 items-center gap-3 border-b border-line py-3 text-ink no-underline">
-                <ScoreBadge score={w.myAvg} size={44} />
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <div className="text-[15px] font-bold">{w.name}</div>
-                  <div className="truncate text-[13px] text-muted">{[w.winery, w.mainGrape, w.region].filter(Boolean).join(' · ')}</div>
+            {hits?.map((w, i) => {
+              const showDivider = i > 0 && hits[i - 1].best && !w.best
+              return (
+                <div key={w.id}>
+                  {i === 0 && w.best && <div className="pt-2 pb-1 text-xs font-extrabold tracking-wide text-berry uppercase">Beste Treffer</div>}
+                  {showDivider && <div className="pt-3 pb-1 text-xs font-bold tracking-wide text-muted uppercase">Weitere Treffer</div>}
+                  <Link to={`/wein/${w.id}`} className="flex min-h-11 items-center gap-3 border-b border-line py-3 text-ink no-underline">
+                    <WineThumb labelUrl={w.labelUrl} type={w.type} size={52} alt={`Etikett ${w.name}`} />
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <div className={`text-[15px] ${w.best ? 'font-extrabold' : 'font-semibold'}`}>{w.name}</div>
+                      <div className="truncate text-[13px] text-muted">{[w.winery, w.mainGrape, w.region].filter(Boolean).join(' · ')}</div>
+                      {w.myAvg !== null && <div className="text-xs font-bold text-berry">Deine Ø {w.myAvg}</div>}
+                    </div>
+                    <IconNext size={18} className="flex-none text-muted" />
+                  </Link>
                 </div>
-                <IconNext size={18} className="flex-none text-muted" />
-              </Link>
-            ))}
+              )
+            })}
             {hits?.length === 0 && <div className="py-3.5 text-sm text-muted">Kein Treffer im Katalog.</div>}
             <Link to={`/wein/neu?name=${encodeURIComponent(q.trim())}`} className="flex min-h-11 items-center gap-2.5 pt-3.5 pb-2.5 text-[15px] font-bold text-berry no-underline">
               <span className="flex size-9 items-center justify-center rounded-full bg-rose-badge">

@@ -6,12 +6,13 @@ import { formatDate, formatMonth, normalize } from '../lib/text'
 import { downloadCsv, useAsync } from '../lib/util'
 import { resetDemo } from '../lib/mockApi'
 import { useApp } from '../App'
-import { Card, ErrorBox, Loading, Page, PageTitle, ScoreBadge, TagChip } from '../components/ui'
-import { IconDownload, IconLogout, IconSearch } from '../components/Icons'
+import { Card, ErrorBox, Loading, Page, PageTitle, ScoreBadge, TagChip, WineThumb } from '../components/ui'
+import { IconBookmark, IconDownload, IconLogout, IconSearch } from '../components/Icons'
 
 export default function HistoryPage() {
   const { profile, refreshProfile } = useApp()
   const res = useAsync(() => api.myRatings(), [])
+  const saved = useAsync(() => api.savedWines(), [])
   const [q, setQ] = useState('')
   const [tag, setTag] = useState<string | null>(null)
   const [editName, setEditName] = useState(false)
@@ -101,6 +102,35 @@ export default function HistoryPage() {
         </Card>
 
         <Card className="pb-1">
+          <h2 className="m-0 mb-2 text-lg font-bold">Gemerkte Weine</h2>
+          {saved.data && saved.data.length === 0 && (
+            <div className="border-t border-line py-4 text-sm text-muted">Noch nichts gemerkt. Auf einer Weinseite oben rechts auf „Merken" tippen.</div>
+          )}
+          {saved.data?.map((w) => (
+            <div key={w.id} className="flex items-center gap-3 border-t border-line py-3">
+              <Link to={`/wein/${w.id}`} className="flex min-w-0 flex-1 items-center gap-3 text-ink no-underline">
+                <WineThumb labelUrl={w.labelUrl} type={w.type} size={48} alt={`Etikett ${w.name}`} />
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-[15px] font-bold">{w.name}</span>
+                  <span className="truncate text-[13px] text-muted">{[w.winery, w.mainGrape, w.region].filter(Boolean).join(' · ')}</span>
+                </span>
+              </Link>
+              <button
+                type="button"
+                aria-label={`${w.name} von der Merkliste entfernen`}
+                onClick={async () => {
+                  await api.setSaved(w.id, false)
+                  saved.reload()
+                }}
+                className="flex size-11 flex-none items-center justify-center rounded-full text-berry"
+              >
+                <IconBookmark size={20} filled />
+              </button>
+            </div>
+          ))}
+        </Card>
+
+        <Card className="pb-1">
           <h2 className="m-0 mb-2 text-lg font-bold">Profil</h2>
           <div className="flex min-h-11 items-center justify-between gap-3 border-t border-line py-3.5">
             {editName ? (
@@ -151,6 +181,10 @@ export default function HistoryPage() {
             Abmelden
           </button>
         </Card>
+
+        <p className="m-0 px-1 text-xs leading-normal text-muted">
+          Weindaten: X-Wines (CC0) und Open Food Facts (openfoodfacts.org, Lizenz ODbL). Glossartexte: eigene Texte.
+        </p>
       </div>
     </Page>
   )
