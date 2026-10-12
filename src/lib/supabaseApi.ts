@@ -1,6 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Api } from './api'
-import type { CommunityStats, Grape, RatingWithWine, SavedWine, Wine, WineHit, WineType } from './types'
+import type {
+  CommunityStats,
+  Friend,
+  FriendRating,
+  Grape,
+  Group,
+  Member,
+  RatingWithWine,
+  Recommendation,
+  SavedWine,
+  Tasting,
+  Wine,
+  WineHit,
+  WineType,
+} from './types'
 
 const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v))
 
@@ -33,6 +47,60 @@ export function createSupabaseApi(url: string, key: string): Api {
     type: (r.type as WineType) ?? null,
     labelUrl: labelUrl((r.label_path as string) ?? null),
     best: r.best === true,
+  })
+
+  const RATING_COLS =
+    'id, wine_id, score, vintage, tasted_on, body, acidity, tannin, note, tags, shared, tasting_id, wines(name, winery, region, country, wine_grapes(grape_id, position))'
+  const WINE_COLS = 'id, name, winery, region, type, label_path, wine_grapes(position, grapes(name))'
+
+  const toRating = (r: Record<string, any>): RatingWithWine => {
+    const wine = r.wines ?? {}
+    const grapes = ((wine.wine_grapes ?? []) as { grape_id: number; position: number }[]).sort((a, b) => a.position - b.position)
+    return {
+      id: Number(r.id),
+      wineId: Number(r.wine_id),
+      score: r.score,
+      vintage: num(r.vintage),
+      tastedOn: r.tasted_on,
+      body: num(r.body),
+      acidity: num(r.acidity),
+      tannin: num(r.tannin),
+      note: r.note,
+      tags: r.tags ?? [],
+      shared: r.shared !== false,
+      tastingId: num(r.tasting_id),
+      wineName: wine.name ?? 'Unbekannter Wein',
+      winery: wine.winery ?? null,
+      region: wine.region ?? null,
+      country: wine.country ?? null,
+      mainGrapeId: grapes.length ? Number(grapes[0].grape_id) : null,
+    }
+  }
+
+  const wineToHit = (w: Record<string, any>): WineHit => {
+    const grapes = ((w.wine_grapes ?? []) as { position: number; grapes: { name: string } | null }[]).sort((a, b) => a.position - b.position)
+    return {
+      id: Number(w.id),
+      name: w.name,
+      winery: w.winery ?? null,
+      region: w.region ?? null,
+      mainGrape: grapes[0]?.grapes?.name ?? null,
+      myAvg: null,
+      type: (w.type as WineType) ?? null,
+      labelUrl: labelUrl(w.label_path ?? null),
+      best: false,
+    }
+  }
+
+  const toTasting = (t: Record<string, any>): Tasting => ({
+    id: Number(t.id),
+    groupId: Number(t.group_id),
+    groupName: t.groups?.name ?? '',
+    title: t.title,
+    eventDate: t.event_date,
+    hostId: t.host,
+    hostName: t.host_profile?.display_name ?? '',
+    status: t.status,
   })
 
   const getWine = async (id: number): Promise<Wine | null> => {
@@ -241,34 +309,12 @@ export function createSupabaseApi(url: string, key: string): Api {
       const id = await userId()
       const { data, error } = await sb
         .from('ratings')
-        .select('id, wine_id, score, vintage, tasted_on, body, acidity, tannin, note, tags, wines(name, winery, region, country, wine_grapes(grape_id, position))')
+        .select(RATING_COLS)
         .eq('user_id', id)
         .order('tasted_on', { ascending: false })
         .order('id', { ascending: false })
       fail(error)
-      return ((data ?? []) as Record<string, any>[]).map((r): RatingWithWine => {
-        const wine = r.wines ?? {}
-        const grapes = ((wine.wine_grapes ?? []) as { grape_id: number; position: number }[]).sort(
-          (a, b) => a.position - b.position,
-        )
-        return {
-          id: Number(r.id),
-          wineId: Number(r.wine_id),
-          score: r.score,
-          vintage: num(r.vintage),
-          tastedOn: r.tasted_on,
-          body: num(r.body),
-          acidity: num(r.acidity),
-          tannin: num(r.tannin),
-          note: r.note,
-          tags: r.tags ?? [],
-          wineName: wine.name ?? 'Unbekannter Wein',
-          winery: wine.winery ?? null,
-          region: wine.region ?? null,
-          country: wine.country ?? null,
-          mainGrapeId: grapes.length ? Number(grapes[0].grape_id) : null,
-        }
-      })
+      return ((data ?? []) as Record<string, any>[]).map(toRating)
     },
     async myTags() {
       const id = await userId()
@@ -289,12 +335,177 @@ export function createSupabaseApi(url: string, key: string): Api {
         tannin: input.tannin,
         note: input.note,
         tags: input.tags,
+        shared: input.shared,
+        tasting_id: input.tastingId,
       })
       fail(error)
     },
     async deleteRating(id) {
       const { error } = await sb.from('ratings').delete().eq('id', id)
       fail(error)
+    },
+    async setRatingShared(id, shared) {
+      const { error } = await sb.from('ratings').update({ shared }).eq('id', id)
+      fail(error)
+    },
+
+    // ---------------- Gruppen ----------------
+    async myGroups() {
+      const id = await userId()
+      const { data, error } = await sb
+        .from('group_members')
+        .select('role, groups(id, name, invite_code, group_members(count))')
+        .eq('user_id', id)
+      fail(error)
+      return ((data ?? []) as Record<string, any>[])
+        .filter((r) => r.groups)
+        .map(
+          (r): Group => ({
+            id: Number(r.groups.id),
+            name: r.groups.name,
+            inviteCode: r.groups.invite_code,
+            isAdmin: r.role === 'admin',
+            memberCount: Number(r.groups.group_members?.[0]?.count ?? 1),
+          }),
+        )
+        .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    },
+    async groupMembers(groupId) {
+      const { data, error } = await sb.from('group_members').select('user_id, role, profiles(display_name)').eq('group_id', groupId)
+      fail(error)
+      return ((data ?? []) as Record<string, any>[])
+        .map((r): Member => ({ userId: r.user_id, displayName: r.profiles?.display_name ?? 'Unbekannt', role: r.role }))
+        .sort((a, b) => a.displayName.localeCompare(b.displayName, 'de'))
+    },
+    async createGroup(name) {
+      const { data, error } = await sb.rpc('create_group', { p_name: name })
+      fail(error)
+      const row = ((data ?? []) as Record<string, any>[])[0]
+      return { id: Number(row.id), name: name.trim(), inviteCode: row.invite_code, isAdmin: true, memberCount: 1 }
+    },
+    async joinGroup(code) {
+      const { data, error } = await sb.rpc('join_group', { p_code: code })
+      fail(error)
+      return Number(data)
+    },
+    async leaveGroup(groupId) {
+      const id = await userId()
+      const { error } = await sb.from('group_members').delete().eq('group_id', groupId).eq('user_id', id)
+      fail(error)
+    },
+    async friends() {
+      const id = await userId()
+      const { data, error } = await sb.from('group_members').select('user_id, profiles(display_name)').neq('user_id', id)
+      fail(error)
+      const seen = new Map<string, Friend>()
+      for (const r of (data ?? []) as Record<string, any>[]) {
+        if (!seen.has(r.user_id)) seen.set(r.user_id, { userId: r.user_id, displayName: r.profiles?.display_name ?? 'Unbekannt' })
+      }
+      return [...seen.values()].sort((a, b) => a.displayName.localeCompare(b.displayName, 'de'))
+    },
+    async friendRatings() {
+      const id = await userId()
+      const { data, error } = await sb.from('ratings').select(`user_id, ${RATING_COLS}`).neq('user_id', id).limit(5000)
+      fail(error)
+      return ((data ?? []) as Record<string, any>[]).map((r): FriendRating => ({ ...toRating(r), userId: r.user_id }))
+    },
+
+    // ---------------- Empfehlungen ----------------
+    async recommendations() {
+      const id = await userId()
+      const { data, error } = await sb
+        .from('recommendations')
+        .select(`id, from_user, to_user, message, seen, created_at, wine:wines(${WINE_COLS}), sender:profiles!recommendations_from_user_fkey(display_name), receiver:profiles!recommendations_to_user_fkey(display_name)`)
+        .order('created_at', { ascending: false })
+        .limit(100)
+      fail(error)
+      return ((data ?? []) as Record<string, any>[])
+        .filter((r) => r.wine)
+        .map(
+          (r): Recommendation => ({
+            id: Number(r.id),
+            fromName: r.sender?.display_name ?? 'Unbekannt',
+            toName: r.receiver?.display_name ?? 'Unbekannt',
+            incoming: r.to_user === id,
+            wine: wineToHit(r.wine),
+            message: r.message,
+            seen: r.seen,
+            createdAt: r.created_at,
+          }),
+        )
+    },
+    async recommend(wineId, toUserIds, message) {
+      if (!toUserIds.length) return
+      const { error } = await sb
+        .from('recommendations')
+        .insert(toUserIds.map((u) => ({ to_user: u, wine_id: wineId, message: message?.trim() || null })))
+      fail(error)
+    },
+    async markRecommendationsSeen() {
+      const id = await userId()
+      const { error } = await sb.from('recommendations').update({ seen: true }).eq('to_user', id).eq('seen', false)
+      fail(error)
+    },
+
+    // ---------------- Weinabende ----------------
+    async tastings() {
+      const { data, error } = await sb
+        .from('tastings')
+        .select('id, group_id, title, event_date, host, status, groups(name), host_profile:profiles!tastings_host_fkey(display_name)')
+        .order('event_date', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(30)
+      fail(error)
+      return ((data ?? []) as Record<string, any>[]).map(toTasting)
+    },
+    async tasting(id) {
+      const { data, error } = await sb
+        .from('tastings')
+        .select(`id, group_id, title, event_date, host, status, groups(name), host_profile:profiles!tastings_host_fkey(display_name), tasting_wines(position, wines(${WINE_COLS}))`)
+        .eq('id', id)
+        .maybeSingle()
+      fail(error)
+      if (!data) return null
+      const { data: prog, error: e2 } = await sb.rpc('tasting_progress', { p_tasting: id })
+      fail(e2)
+      const wines = (((data as Record<string, any>).tasting_wines ?? []) as Record<string, any>[])
+        .filter((tw) => tw.wines)
+        .sort((a, b) => a.position - b.position)
+        .map((tw) => wineToHit(tw.wines))
+      return {
+        tasting: toTasting(data as Record<string, any>),
+        wines,
+        progress: ((prog ?? []) as Record<string, any>[]).map((p) => ({ userId: p.user_id, displayName: p.display_name, rated: Number(p.rated) })),
+      }
+    },
+    async createTasting(groupId, title, eventDate) {
+      const { data, error } = await sb
+        .from('tastings')
+        .insert({ group_id: groupId, title: title.trim(), event_date: eventDate })
+        .select('id')
+        .single()
+      fail(error)
+      return Number(data!.id)
+    },
+    async addTastingWine(tastingId, wineId) {
+      const { count } = await sb.from('tasting_wines').select('wine_id', { count: 'exact', head: true }).eq('tasting_id', tastingId)
+      const { error } = await sb
+        .from('tasting_wines')
+        .upsert({ tasting_id: tastingId, wine_id: wineId, position: (count ?? 0) + 1 }, { onConflict: 'tasting_id,wine_id', ignoreDuplicates: true })
+      fail(error)
+    },
+    async removeTastingWine(tastingId, wineId) {
+      const { error } = await sb.from('tasting_wines').delete().eq('tasting_id', tastingId).eq('wine_id', wineId)
+      fail(error)
+    },
+    async revealTasting(tastingId) {
+      const { error } = await sb.from('tastings').update({ status: 'aufgeloest' }).eq('id', tastingId)
+      fail(error)
+    },
+    async tastingRatings(tastingId) {
+      const { data, error } = await sb.from('ratings').select(`user_id, ${RATING_COLS}`).eq('tasting_id', tastingId)
+      fail(error)
+      return ((data ?? []) as Record<string, any>[]).map((r): FriendRating => ({ ...toRating(r), userId: r.user_id }))
     },
   }
 }

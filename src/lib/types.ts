@@ -65,6 +65,10 @@ export interface Rating {
   tannin: number | null
   note: string | null
   tags: string[]
+  /** für die eigenen Gruppen sichtbar */
+  shared: boolean
+  /** gehört zu einem Weinabend */
+  tastingId: number | null
 }
 
 /** Bewertung samt Weininfos für Listen, Statistik und Decider */
@@ -103,6 +107,8 @@ export interface NewRating {
   tannin: number | null
   note: string | null
   tags: string[]
+  shared: boolean
+  tastingId: number | null
 }
 
 export interface NewWine {
@@ -119,4 +125,60 @@ export interface Profile {
   id: string
   displayName: string
   isAdmin: boolean
+}
+
+// ---------------------------------------------------------------------
+// Soziales: Gruppen, Freunde, Empfehlungen, Weinabende
+// ---------------------------------------------------------------------
+
+export interface Group {
+  id: number
+  name: string
+  inviteCode: string
+  isAdmin: boolean
+  memberCount: number
+}
+
+export interface Member {
+  userId: string
+  displayName: string
+  role: 'admin' | 'member'
+}
+
+export interface Friend {
+  userId: string
+  displayName: string
+}
+
+/** Bewertung eines Freundes (nur geteilte, sichtbar über die Gruppen) */
+export interface FriendRating extends RatingWithWine {
+  userId: string
+}
+
+export interface Recommendation {
+  id: number
+  fromName: string
+  toName: string
+  incoming: boolean
+  wine: WineHit
+  message: string | null
+  seen: boolean
+  createdAt: string
+}
+
+export interface Tasting {
+  id: number
+  groupId: number
+  groupName: string
+  title: string
+  eventDate: string
+  hostId: string
+  hostName: string
+  status: 'offen' | 'aufgeloest'
+}
+
+export interface TastingProgress {
+  userId: string
+  displayName: string
+  rated: number
 }

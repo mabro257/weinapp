@@ -91,7 +91,13 @@ const MY_ROWS: Row[] = [
   [15, 85, 2017, '2023-08-19', null, null, null, null, ['Restaurant Beispiel']],
 ]
 
-const FRIENDS = ['demo-f1', 'demo-f2', 'demo-f3', 'demo-f4']
+export const DEMO_FRIENDS = [
+  { id: 'demo-f1', name: 'Anna' },
+  { id: 'demo-f2', name: 'Ben' },
+  { id: 'demo-f3', name: 'Clara' },
+  { id: 'demo-f4', name: 'David' },
+]
+const FRIENDS = DEMO_FRIENDS.map((f) => f.id)
 
 /** Kleiner, fester Zufallsgenerator, damit die Demo-Daten immer gleich aussehen. */
 function seeded(seed: number) {
@@ -108,7 +114,7 @@ export function buildDemoRatings(): DemoRating[] {
   for (const r of MY_ROWS) {
     out.push({
       id: id++, userId: DEMO_ME.id, wineId: r[0], score: r[1], vintage: r[2], tastedOn: r[3],
-      body: r[4], acidity: r[5], tannin: r[6], note: r[7], tags: r[8],
+      body: r[4], acidity: r[5], tannin: r[6], note: r[7], tags: r[8], shared: true, tastingId: null,
     })
   }
   const rnd = seeded(42)
@@ -120,9 +126,14 @@ export function buildDemoRatings(): DemoRating[] {
         id: id++, userId: f, wineId: wine.id, score: base, vintage: 2018 + Math.floor(rnd() * 5),
         tastedOn: '2025-0' + (1 + Math.floor(rnd() * 9)) + '-15',
         body: wine.body, acidity: wine.acidity, tannin: wine.type === 'rot' ? 3 + Math.round(rnd()) : null,
-        note: null, tags: [],
+        note: null, tags: [], shared: true, tastingId: null,
       })
     }
+  }
+  // Laufender Weinabend (Nr. 1): Anna und Ben haben schon bewertet, Noten bleiben bis zur Auflösung verdeckt
+  const abend: [string, number, number][] = [['demo-f1', 24, 84], ['demo-f1', 9, 91], ['demo-f1', 7, 89], ['demo-f2', 24, 80], ['demo-f2', 9, 88]]
+  for (const [u, w, sc] of abend) {
+    out.push({ id: id++, userId: u, wineId: w, score: sc, vintage: null, tastedOn: '2026-10-12', body: null, acidity: null, tannin: null, note: null, tags: ['Weinabend bei mir'], shared: true, tastingId: 1 })
   }
   return out
 }

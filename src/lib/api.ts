@@ -1,5 +1,12 @@
 import type {
   CommunityStats,
+  Friend,
+  FriendRating,
+  Group,
+  Member,
+  Recommendation,
+  Tasting,
+  TastingProgress,
   Grape,
   GrapeCommunity,
   NewRating,
@@ -50,6 +57,32 @@ export interface Api {
   myTags(): Promise<string[]>
   createRating(input: NewRating): Promise<void>
   deleteRating(id: number): Promise<void>
+  setRatingShared(id: number, shared: boolean): Promise<void>
+
+  // Gruppen
+  myGroups(): Promise<Group[]>
+  groupMembers(groupId: number): Promise<Member[]>
+  createGroup(name: string): Promise<Group>
+  joinGroup(code: string): Promise<number>
+  leaveGroup(groupId: number): Promise<void>
+  friends(): Promise<Friend[]>
+  /** geteilte Bewertungen aller Freunde aus den eigenen Gruppen */
+  friendRatings(): Promise<FriendRating[]>
+
+  // Empfehlungen
+  recommendations(): Promise<Recommendation[]>
+  recommend(wineId: number, toUserIds: string[], message: string | null): Promise<void>
+  markRecommendationsSeen(): Promise<void>
+
+  // Weinabende
+  tastings(): Promise<Tasting[]>
+  tasting(id: number): Promise<{ tasting: Tasting; wines: WineHit[]; progress: TastingProgress[] } | null>
+  createTasting(groupId: number, title: string, eventDate: string): Promise<number>
+  addTastingWine(tastingId: number, wineId: number): Promise<void>
+  removeTastingWine(tastingId: number, wineId: number): Promise<void>
+  revealTasting(tastingId: number): Promise<void>
+  /** alle sichtbaren Bewertungen eines aufgelösten Abends (eigene und geteilte der anderen) */
+  tastingRatings(tastingId: number): Promise<FriendRating[]>
 }
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined

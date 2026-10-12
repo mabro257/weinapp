@@ -3,12 +3,13 @@ import type { CommunityStats, Grape, NewRating, NewWine, RatingWithWine, SavedWi
 import { GRAPES } from './grapesData'
 import { DEMO_ME, DEMO_WINES, buildDemoRatings, type DemoRating } from './demoData'
 import { normalize } from './text'
+import { createSocialMock, initialSocial, type SocialStore } from './mockSocial'
 
 /**
  * Demo-Modus: alle Daten liegen im Browser (localStorage).
  * Eigene Änderungen bleiben auf diesem Gerät erhalten.
  */
-const STORE_KEY = 'weinapp-demo-v1'
+const STORE_KEY = 'weinapp-demo-v2'
 
 interface Store {
   wines: Wine[]
@@ -16,6 +17,7 @@ interface Store {
   displayName: string
   signedIn: boolean
   saved?: { wineId: number; at: string }[]
+  social: SocialStore
 }
 
 function load(): Store {
@@ -25,7 +27,7 @@ function load(): Store {
   } catch {
     // Speicher nicht verfügbar: mit frischen Demo-Daten starten
   }
-  return { wines: DEMO_WINES, ratings: buildDemoRatings(), displayName: DEMO_ME.displayName, signedIn: true }
+  return { wines: DEMO_WINES, ratings: buildDemoRatings(), displayName: DEMO_ME.displayName, signedIn: true, social: initialSocial() }
 }
 
 function avg(xs: number[]): number | null {
@@ -46,6 +48,17 @@ export function createMockApi(): Api {
   const wait = <T,>(v: T) => new Promise<T>((res) => setTimeout(() => res(v), 120))
   const grapeName = (id: number | undefined) => GRAPES.find((g) => g.id === id)?.name ?? null
   const mine = () => store.ratings.filter((r) => r.userId === DEMO_ME.id)
+  const withWine = (r: DemoRating): RatingWithWine => {
+    const wine = store.wines.find((x) => x.id === r.wineId)
+    return {
+      ...r,
+      wineName: wine?.name ?? 'Unbekannter Wein',
+      winery: wine?.winery ?? null,
+      region: wine?.region ?? null,
+      country: wine?.country ?? null,
+      mainGrapeId: wine?.grapeIds[0] ?? null,
+    }
+  }
 
   const toHit = (wine: Wine, best = false): WineHit => {
     const own = mine().filter((r) => r.wineId === wine.id).map((r) => r.score)
@@ -181,17 +194,7 @@ export function createMockApi(): Api {
 
     async myRatings(): Promise<RatingWithWine[]> {
       const list = mine()
-        .map((r) => {
-          const wine = store.wines.find((x) => x.id === r.wineId)
-          return {
-            ...r,
-            wineName: wine?.name ?? 'Unbekannter Wein',
-            winery: wine?.winery ?? null,
-            region: wine?.region ?? null,
-            country: wine?.country ?? null,
-            mainGrapeId: wine?.grapeIds[0] ?? null,
-          }
-        })
+        .map(withWine)
         .sort((a, b) => (a.tastedOn < b.tastedOn ? 1 : a.tastedOn > b.tastedOn ? -1 : b.id - a.id))
       return wait(list)
     },
@@ -211,6 +214,19 @@ export function createMockApi(): Api {
       save()
       await wait(null)
     },
+    async setRatingShared(id, shared) {
+      store.ratings = store.ratings.map((r) => (r.id === id && r.userId === DEMO_ME.id ? { ...r, shared } : r))
+      save()
+      await wait(null)
+    },
+
+    ...createSocialMock({
+      get: () => store,
+      save,
+      wait,
+      toHit: (w) => toHit(w),
+      withWine,
+    }),
   }
 }
 

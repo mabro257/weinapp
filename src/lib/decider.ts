@@ -74,7 +74,7 @@ export function decide(
       const name = grapeName(grapeId)
       if (scores.length === 0) {
         reasons.push(`${name}: noch keine eigene Bewertung.`)
-        if (comm && comm.count >= 3) reasons.push(`Community: ${name} im Schnitt ${Math.round(comm.avg)} (${comm.count} Bewertungen).`)
+        if (comm && comm.count >= 3) reasons.push(`Deine Gruppen: ${name} im Schnitt ${Math.round(comm.avg)} (${comm.count} Bewertungen).`)
       } else {
         const s = summarize(scores)
         if (s.kind === 'box') {
@@ -113,7 +113,7 @@ export function decide(
     const wc = c.wine ? wineComm.get(c.wine.id) : undefined
     if (wc && wc.count > 0) {
       parts.push({ w: W.community, v: shrunk(Array(wc.count).fill(wc.avg), overall, 2) })
-      reasons.push(`Community: dieser Wein im Schnitt ${Math.round(wc.avg)} (${wc.count} ${wc.count === 1 ? 'Bewertung' : 'Bewertungen'}).`)
+      reasons.push(`Deine Gruppen: dieser Wein im Schnitt ${Math.round(wc.avg)} (${wc.count} ${wc.count === 1 ? 'Bewertung' : 'Bewertungen'}).`)
     }
 
     const own = c.wine ? mine.filter((r) => r.wineId === c.wine!.id).map((r) => r.score) : []
