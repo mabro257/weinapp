@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
+import { decideForTable } from '../lib/social'
 import type { CommunityStats, Wine, WineHit } from '../lib/types'
 import { decide, type Candidate } from '../lib/decider'
 import { normalize } from '../lib/text'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
-import { Card, CardTitle, ErrorBox, Page, PageTitle } from '../components/ui'
+import { Card, CardTitle, ErrorBox, Page, PageTitle, Segmented } from '../components/ui'
 import { IconCheck, IconClose } from '../components/Icons'
 
 interface Stored {
@@ -27,7 +29,10 @@ function loadStored(): Stored[] {
 }
 
 export default function DeciderPage() {
-  const { grapes } = useApp()
+  const { grapes, profile } = useApp()
+  const [params] = useSearchParams()
+  const [mode, setMode] = useState<'ich' | 'tisch'>(params.get('tisch') ? 'tisch' : 'ich')
+  const [people, setPeople] = useState<Set<string>>(new Set([profile.id]))
   const [items, setItems] = useState<Stored[]>(loadStored)
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<WineHit[]>([])
@@ -35,8 +40,8 @@ export default function DeciderPage() {
   const [comm, setComm] = useState<Map<number, CommunityStats>>(new Map())
   const tried = useRef(new Set<number>())
   const base = useAsync(async () => {
-    const [mine, grapeComm] = await Promise.all([api.myRatings(), api.grapeCommunity()])
-    return { mine, grapeComm }
+    const [mine, grapeComm, friends, friendRatings] = await Promise.all([api.myRatings(), api.grapeCommunity(), api.friends(), api.friendRatings()])
+    return { mine, grapeComm, friends, friendRatings }
   }, [])
 
   useEffect(() => {
@@ -107,14 +112,52 @@ export default function DeciderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [base.data, items, wines, comm, grapes])
 
+  const tableResults = useMemo(() => {
+    if (!base.data || mode !== 'tisch' || candidates.length < 2 || people.size === 0) return []
+    const persons = [...people].map((id) =>
+      id === profile.id
+        ? { id, name: 'Ich', ratings: base.data!.mine }
+        : { id, name: base.data!.friends.find((f) => f.userId === id)?.displayName ?? '?', ratings: base.data!.friendRatings.filter((r) => r.userId === id) },
+    )
+    return decideForTable(candidates, persons, grapes, base.data.grapeComm, comm)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base.data, items, wines, comm, grapes, mode, people, profile.id])
+
+  const togglePerson = (id: string) =>
+    setPeople((cur) => {
+      const n = new Set(cur)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
+
   const priceOf = (key: string) => items.find((i) => i.key === key)?.price
 
   return (
     <Page>
-      <PageTitle title="Restaurant-Decider" sub="Welcher Wein von der Karte passt zu dir?" />
+      <PageTitle title="Restaurant-Decider" sub={mode === 'tisch' ? 'Welche Flasche passt zum ganzen Tisch?' : 'Welcher Wein von der Karte passt zu dir?'} />
       {base.error && <ErrorBox message={base.error} />}
 
       <div className="flex flex-col gap-4 px-4 pt-5">
+        <div className="rounded-full bg-card p-1">
+          <Segmented label="Für wen" value={mode} onChange={(v) => v && setMode(v)} options={[{ value: 'ich', label: 'Nur für mich' }, { value: 'tisch', label: 'Für den Tisch' }]} />
+        </div>
+
+        {mode === 'tisch' && (
+          <Card className="flex flex-col gap-3">
+            <h2 className="m-0 text-lg font-bold">Wer trinkt mit?</h2>
+            <div className="flex flex-wrap gap-2">
+              {[{ userId: profile.id, displayName: 'Ich' }, ...(base.data?.friends ?? [])].map((f) => (
+                <button key={f.userId} type="button" aria-pressed={people.has(f.userId)} onClick={() => togglePerson(f.userId)} className={`min-h-10 rounded-full px-4 text-sm ${people.has(f.userId) ? 'bg-berry font-bold text-white' : 'bg-chip font-semibold text-ink-2'}`}>
+                  {f.displayName}
+                </button>
+              ))}
+            </div>
+            <div className="text-xs text-muted">
+              {(base.data?.friends.length ?? 0) === 0 ? 'Noch keine Freunde: Lege unter „Freunde" eine Gruppe an.' : 'Aus deinen Gruppen. Grundlage sind ihre geteilten Bewertungen.'}
+            </div>
+          </Card>
+        )}
         <Card className="flex flex-col gap-1">
           <CardTitle
             right={
@@ -188,7 +231,50 @@ export default function DeciderPage() {
           {items.length < 2 && <div className="pt-3 text-[13px] text-muted">Füge mindestens zwei Weine hinzu. Ist ein Wein nicht im Katalog, wähle einfach seine Rebsorte.</div>}
         </Card>
 
-        {results.length > 0 && (
+        {mode === 'tisch' && tableResults.length > 0 && (
+          <>
+            <h2 className="m-0 mt-2 px-1 text-lg font-bold">Empfehlung für den Tisch</h2>
+            {tableResults.map((r, i) => {
+              const first = i === 0
+              return (
+                <section key={r.key} className={`flex flex-col gap-3.5 rounded-[28px] p-5 ${first ? 'bg-hero text-white' : 'bg-card text-ink'}`}>
+                  <div className="flex items-center gap-3.5">
+                    <div className={`flex size-[60px] flex-none flex-col items-center justify-center rounded-[20px] ${first ? 'bg-white text-hero' : 'bg-rose-badge text-berry'}`}>
+                      <span className="text-[22px] leading-none font-extrabold">{r.score}</span>
+                      <span className="text-[10px] font-bold">Tisch</span>
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1">
+                      {first && <span className="self-start rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold">Beste Wahl für alle</span>}
+                      <span className="text-lg font-extrabold">{r.label}</span>
+                      <span className={`text-[13px] ${first ? 'opacity-90' : 'text-muted'}`}>{[r.sub, priceOf(r.key) ? `${priceOf(r.key)} €` : ''].filter(Boolean).join(' · ')}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {r.perPerson.map((p) => (
+                      <div key={p.id} className="flex items-center gap-2.5">
+                        <span className="w-14 flex-none truncate text-[13px] font-bold">{p.name}</span>
+                        <span className={`h-2 flex-1 overflow-hidden rounded-full ${first ? 'bg-white/25' : 'bg-rose'}`}>
+                          <span className={`block h-2 rounded-full ${first ? 'bg-white' : 'bg-berry'}`} style={{ width: `${Math.max(0, Math.min(100, ((p.score - 70) / 30) * 100))}%` }} />
+                        </span>
+                        <span className="w-6 flex-none text-right text-[13px] font-extrabold">{p.score}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {r.weakest && (
+                    <div className={`rounded-[14px] px-3 py-2 text-[13px] font-semibold ${first ? 'bg-white/15' : 'bg-chip text-ink-2'}`}>
+                      {r.weakest.name === 'Ich' ? 'Für dich' : `${r.weakest.name}`} eher nicht: Passung nur {r.weakest.score}.
+                    </div>
+                  )}
+                </section>
+              )
+            })}
+            <div className="px-1 text-xs leading-normal text-muted">
+              Tischwert: Durchschnitt aller Passungen, abgewertet, wenn jemand am Tisch deutlich darunter liegt. So gewinnt der Wein, mit dem alle glücklich sind.
+            </div>
+          </>
+        )}
+
+        {mode === 'ich' && results.length > 0 && (
           <>
             <h2 className="m-0 mt-2 px-1 text-lg font-bold">Empfehlung</h2>
             {results.map((r, i) =>

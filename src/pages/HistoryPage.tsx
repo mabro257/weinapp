@@ -7,7 +7,7 @@ import { downloadCsv, useAsync } from '../lib/util'
 import { resetDemo } from '../lib/mockApi'
 import { useApp } from '../App'
 import { Card, ErrorBox, Loading, Page, PageTitle, ScoreBadge, TagChip, WineThumb } from '../components/ui'
-import { IconBookmark, IconDownload, IconLogout, IconSearch } from '../components/Icons'
+import { IconBookmark, IconDownload, IconLock, IconLogout, IconMedal, IconNext, IconSearch } from '../components/Icons'
 
 export default function HistoryPage() {
   const { profile, refreshProfile } = useApp()
@@ -55,6 +55,12 @@ export default function HistoryPage() {
           ))}
         </div>
 
+        <Link to="/abzeichen" className="flex items-center gap-3.5 rounded-[22px] bg-card px-4 py-3.5 text-ink no-underline">
+          <span className="flex size-10 flex-none items-center justify-center rounded-full bg-berry text-white"><IconMedal size={22} /></span>
+          <span className="flex-1 text-[15px] font-bold">Meine Abzeichen</span>
+          <IconNext size={18} className="text-muted" />
+        </Link>
+
         <div className="flex h-[52px] items-center gap-2.5 rounded-full bg-card px-[18px]">
           <IconSearch size={20} className="flex-none text-muted" />
           <label htmlFor="vsuche" className="sr-only">Verkostungen durchsuchen</label>
@@ -91,6 +97,11 @@ export default function HistoryPage() {
                     <div className="text-xs font-semibold text-muted">
                       {formatDate(r.tastedOn)}
                       {r.vintage ? ` · Jahrgang ${r.vintage}` : ''}
+                      {!r.shared && (
+                        <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-chip px-2 py-0.5 align-middle text-[11px] font-bold text-ink-2">
+                          <IconLock size={11} /> privat
+                        </span>
+                      )}
                     </div>
                     {r.tags.length > 0 && <div className="flex flex-wrap gap-1.5">{r.tags.map((t) => <TagChip key={t} label={t} />)}</div>}
                     {r.note && <div className="text-[13px] leading-snug text-muted">{r.note}</div>}

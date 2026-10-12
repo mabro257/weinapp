@@ -1,18 +1,30 @@
 import { useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { TASTE, scoreWord, tasteWord, todayIso, type TasteKey } from '../lib/text'
 import { resizeImage, useAsync } from '../lib/util'
-import { Card, CardTitle, ErrorBox, FormHeader, Hint, Loading, Page, PrimaryButton, TextInput } from '../components/ui'
+import { Card, CardTitle, ErrorBox, FormHeader, Hint, Loading, Page, PrimaryButton, Switch, TextInput } from '../components/ui'
 import { IconCamera, IconCheck, IconClose, IconMinus, IconPin, IconPlus } from '../components/Icons'
 
 export default function RatePage() {
   const wineId = Number(useParams().id)
   const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const tastingId = params.get('abend') ? Number(params.get('abend')) : null
   const res = useAsync(async () => {
-    const [wine, tags] = await Promise.all([api.getWine(wineId), api.myTags()])
-    return { wine, tags }
-  }, [wineId])
+    const [wine, tags, groups, tasting] = await Promise.all([
+      api.getWine(wineId),
+      api.myTags(),
+      api.myGroups(),
+      tastingId ? api.tasting(tastingId) : Promise.resolve(null),
+    ])
+    if (tasting) {
+      // Bewertung im Rahmen eines Weinabends: Datum und Anlass automatisch setzen
+      setDate(tasting.tasting.eventDate)
+      setTags((cur) => (cur.includes(tasting.tasting.title) ? cur : [...cur, tasting.tasting.title]))
+    }
+    return { wine, tags, groups, tasting }
+  }, [wineId, tastingId])
 
   const [score, setScore] = useState(85)
   const [vintage, setVintage] = useState('')
@@ -22,6 +34,7 @@ export default function RatePage() {
   const [newTag, setNewTag] = useState('')
   const [note, setNote] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
+  const [shared, setShared] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -58,6 +71,8 @@ export default function RatePage() {
         tannin: taste.tannin,
         note: note.trim() || null,
         tags: pending && !tags.includes(pending) ? [...tags, pending] : tags,
+        shared,
+        tastingId: res.data?.tasting ? tastingId : null,
       })
       if (photo && !wine.labelUrl) {
         try {
@@ -66,7 +81,7 @@ export default function RatePage() {
           // Bewertung ist gespeichert; ein fehlgeschlagenes Foto soll das nicht verhindern
         }
       }
-      navigate(`/wein/${wineId}`, { replace: true })
+      navigate(res.data?.tasting ? `/weinabend/${tastingId}` : `/wein/${wineId}`, { replace: true })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
       setBusy(false)
@@ -78,6 +93,11 @@ export default function RatePage() {
       <FormHeader title="Neue Bewertung" sub={[wine.name, wine.winery].filter(Boolean).join(' · ')} closeIcon={<IconClose size={20} />} />
 
       <div className="flex flex-col gap-4 px-4 pt-4">
+        {res.data?.tasting && (
+          <div className="rounded-[22px] bg-hero px-4 py-3 text-sm font-semibold text-white">
+            {res.data.tasting.tasting.title}: Die anderen sehen deine Note erst nach der Auflösung.
+          </div>
+        )}
         <Card className="flex flex-col gap-3.5">
           <label htmlFor="punkte" className="text-[13px] font-bold text-muted">Gesamtnote</label>
           <div className="flex items-center justify-between gap-3">
@@ -198,6 +218,26 @@ export default function RatePage() {
             </button>
           </>
         )}
+
+        <Card className="flex flex-col gap-3.5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 flex-col gap-1">
+              <span id="sicht-label" className="text-[17px] font-bold">Für meine Gruppen sichtbar</span>
+              <span className="text-[13px] leading-snug text-muted">
+                {shared ? 'Note, Notiz und Ort sehen die Mitglieder deiner Gruppen.' : 'Privat: nur du siehst diese Bewertung. Sie zählt nicht in Gruppenwertungen.'}
+              </span>
+            </div>
+            <Switch checked={shared} onChange={setShared} labelledBy="sicht-label" />
+          </div>
+          {shared && (res.data?.groups.length ?? 0) > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {res.data!.groups.map((g) => (
+                <span key={g.id} className="rounded-full bg-rose-badge px-3 py-1.5 text-[13px] font-bold text-berry-dark">{g.name}</span>
+              ))}
+            </div>
+          )}
+          {shared && res.data?.groups.length === 0 && <div className="text-xs text-muted">Du bist noch in keiner Gruppe. Sobald du einer beitrittst, sehen die Mitglieder diese Bewertung.</div>}
+        </Card>
 
         {error && <div role="alert" className="rounded-2xl bg-rose-badge px-4 py-3 text-sm font-semibold text-berry-dark">{error}</div>}
 
