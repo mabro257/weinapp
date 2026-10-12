@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { IconBack, IconBook, IconPin, IconScale, IconSearch, IconUser } from './Icons'
+import { IconBack, IconGlass, IconPin, IconScale, IconSearch, IconSpark, IconUser } from './Icons'
 import type { BoxSummary } from '../lib/stats'
 
 /** Seitenrahmen: mobil volle Breite, auf großen Bildschirmen mittig begrenzt */
@@ -86,6 +86,26 @@ export function ScoreBadge({ score, size = 52 }: { score: number | null; size?: 
       style={{ width: size, height: size, fontSize: size >= 52 ? 20 : 16 }}
     >
       {empty ? '–' : score}
+    </div>
+  )
+}
+
+const THUMB_STYLE: Record<string, { bg: string; fg: string }> = {
+  rot: { bg: '#7A1F3D', fg: '#FFFFFF' },
+  weiss: { bg: '#F3EAC2', fg: '#6B5A1E' },
+  rose: { bg: '#F6D5DC', fg: '#8E2A4B' },
+  schaum: { bg: '#E6E9F2', fg: '#4A4455' },
+}
+
+/** Vorschaubild für Listen: Etikettfoto, sonst ein Glas in der Farbe des Weintyps */
+export function WineThumb({ labelUrl, type, size = 52, alt }: { labelUrl: string | null; type: string | null; size?: number; alt?: string }) {
+  if (labelUrl) {
+    return <img src={labelUrl} alt={alt ?? 'Etikett'} loading="lazy" className="flex-none rounded-[14px] bg-chip object-cover" style={{ width: size * 0.82, height: size }} />
+  }
+  const s = THUMB_STYLE[type ?? ''] ?? { bg: '#F4F2F7', fg: '#6B6475' }
+  return (
+    <div className="flex flex-none items-center justify-center rounded-[14px]" style={{ width: size * 0.82, height: size, background: s.bg, color: s.fg }} aria-hidden="true">
+      <IconGlass size={Math.round(size * 0.48)} />
     </div>
   )
 }
@@ -277,7 +297,7 @@ export function BottomNav() {
     >
       <NavItem to="/" end label="Suche" icon={<IconSearch />} />
       <NavItem to="/decider" label="Decider" icon={<IconScale />} />
-      <NavItem to="/rebsorten" label="Rebsorten" icon={<IconBook />} />
+      <NavItem to="/geschmack" label="Geschmack" icon={<IconSpark />} />
       <NavItem to="/ich" label="Ich" icon={<IconUser />} />
     </nav>
   )

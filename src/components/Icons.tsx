@@ -59,6 +59,16 @@ export const IconDownload = ({ size, ...p }: P) => (
 export const IconLogout = ({ size, ...p }: P) => (
   <svg {...base(size)} {...p}><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11" /></svg>
 )
-export const IconTrash = ({ size, ...p }: P) => (
+export const IconBookmark = ({ size, filled, ...p }: P & { filled?: boolean }) => (
+  <svg {...base(size)} strokeWidth={2} fill={filled ? 'currentColor' : 'none'} {...p}><path d="M6 4h12v17l-6-4-6 4z" /></svg>
+)
+/** Zielscheibe: steht für „Mein Geschmack" */
+export const IconSpark = ({ size, ...p }: P) => (
+  <svg {...base(size)} strokeWidth={2} {...p}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /></svg>
+)
+export const IconGlass =({ size, ...p }: P) => (
+  <svg {...base(size)} strokeWidth={1.8} {...p}><path d="M7 3h10c0 0 1 5-.5 8a4.5 4.5 0 0 1-9 0C6 8 7 3 7 3z" /><path d="M12 15.5V20M8.5 21h7" /></svg>
+)
+export const IconTrash =({ size, ...p }: P) => (
   <svg {...base(size)} strokeWidth={2} {...p}><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
 )
