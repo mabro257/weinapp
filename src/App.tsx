@@ -10,6 +10,7 @@ import RatePage from './pages/RatePage'
 import NewWinePage from './pages/NewWinePage'
 import DeciderPage from './pages/DeciderPage'
 import GrapesPage from './pages/GrapesPage'
+import TastePage from './pages/TastePage'
 import GrapePage from './pages/GrapePage'
 import HistoryPage from './pages/HistoryPage'
 
@@ -69,6 +70,7 @@ export default function App() {
           <Route path="/wein/:id" element={<WinePage />} />
           <Route path="/wein/:id/bewerten" element={<RatePage />} />
           <Route path="/decider" element={<DeciderPage />} />
+          <Route path="/geschmack" element={<TastePage />} />
           <Route path="/rebsorten" element={<GrapesPage />} />
           <Route path="/rebsorten/:id" element={<GrapePage />} />
           <Route path="/ich" element={<HistoryPage />} />
