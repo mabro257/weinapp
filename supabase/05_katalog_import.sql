@@ -1,5 +1,5 @@
 -- =====================================================================
--- Großer Katalogimport aus X-Wines (CC0, 100.646 Weine).
+-- Großer Katalogimport aus X-Wines (CC0, 100.646 Weine) und Open Food Facts (ODbL, ca. 5.900 Weine).
 -- NICHT im SQL Editor ausführen: Dieses Skript läuft über die GitHub Action
 -- „Katalog-Import" (psql), weil die Daten für den Editor zu groß sind.
 -- Kann gefahrlos wiederholt werden: bereits importierte Weine werden übersprungen.
@@ -21,6 +21,8 @@ create temp table imp (
   type text, body smallint, acidity smallint, grapes text
 );
 \copy imp from 'data/katalog.csv' with (format csv, header)
+-- Ergänzung aus Open Food Facts (ODbL), Kennung „off:" + Barcode
+\copy imp from 'data/off_katalog.csv' with (format csv, header)
 
 -- Suchtext-Trigger während des Imports aussetzen, der Suchtext wird danach in einem Schritt berechnet
 alter table public.wines disable trigger wines_search;
