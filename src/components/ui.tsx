@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { IconBack, IconGlass, IconPin, IconScale, IconSearch, IconSpark, IconUser } from './Icons'
+import { IconBack, IconGlass, IconPin, IconScale, IconSearch, IconSpark, IconUser, IconUsers } from './Icons'
 import type { BoxSummary } from '../lib/stats'
 
 /** Seitenrahmen: mobil volle Breite, auf großen Bildschirmen mittig begrenzt */
@@ -152,6 +152,41 @@ export function Segmented<T extends string | number>({
   )
 }
 
+/** Ein/Aus-Schalter */
+export function Switch({ checked, onChange, labelledBy, label }: { checked: boolean; onChange: (v: boolean) => void; labelledBy?: string; label?: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-labelledby={labelledBy}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className={`flex h-8 w-14 flex-none rounded-full p-[3px] transition-colors ${checked ? 'justify-end bg-berry' : 'justify-start bg-dash'}`}
+    >
+      <span className="size-[26px] rounded-full bg-white shadow" />
+    </button>
+  )
+}
+
+/** Rundes Profilbild mit Anfangsbuchstaben, Farbe aus dem Namen abgeleitet */
+const AVATAR_COLORS = [
+  ['#F6E3E9', '#6C1E38'],
+  ['#DDE8DA', '#2F4A2A'],
+  ['#E6E9F2', '#2E3A5C'],
+  ['#F3EAC2', '#6B5A1E'],
+  ['#E9DFF3', '#4B2E6B'],
+]
+export function Avatar({ name, size = 44, me }: { name: string; size?: number; me?: boolean }) {
+  const idx = [...name].reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_COLORS.length
+  const [bg, fg] = me ? ['#7A1F3D', '#FFFFFF'] : AVATAR_COLORS[idx]
+  return (
+    <span className="flex flex-none items-center justify-center rounded-full font-extrabold" style={{ width: size, height: size, background: bg, color: fg, fontSize: size * 0.38 }} aria-hidden="true">
+      {(name.trim()[0] ?? '?').toUpperCase()}
+    </span>
+  )
+}
+
 export function ScoreRing({ value, size = 112 }: { value: number | null; size?: number }) {
   const r = 48
   const c = 2 * Math.PI * r
@@ -279,7 +314,7 @@ function NavItem({ to, label, icon, end }: { to: string; label: string; icon: Re
       to={to}
       end={end}
       className={({ isActive }) =>
-        `flex min-h-[52px] flex-col items-center justify-center gap-1 text-xs no-underline ${isActive ? 'font-extrabold text-berry' : 'font-semibold text-muted'}`
+        `flex min-h-[52px] flex-col items-center justify-center gap-1 text-[11px] no-underline ${isActive ? 'font-extrabold text-berry' : 'font-semibold text-muted'}`
       }
     >
       {icon}
@@ -292,11 +327,12 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Hauptnavigation"
-      className="sticky bottom-0 grid grid-cols-4 gap-1 border-t border-line bg-card px-2 pt-2"
+      className="sticky bottom-0 grid grid-cols-5 gap-0.5 border-t border-line bg-card px-1 pt-2"
       style={{ paddingBottom: 'max(14px, env(safe-area-inset-bottom))' }}
     >
       <NavItem to="/" end label="Suche" icon={<IconSearch />} />
       <NavItem to="/decider" label="Decider" icon={<IconScale />} />
+      <NavItem to="/freunde" label="Freunde" icon={<IconUsers />} />
       <NavItem to="/geschmack" label="Geschmack" icon={<IconSpark />} />
       <NavItem to="/ich" label="Ich" icon={<IconUser />} />
     </nav>

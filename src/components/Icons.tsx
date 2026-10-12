@@ -69,6 +69,18 @@ export const IconSpark = ({ size, ...p }: P) => (
 export const IconGlass =({ size, ...p }: P) => (
   <svg {...base(size)} strokeWidth={1.8} {...p}><path d="M7 3h10c0 0 1 5-.5 8a4.5 4.5 0 0 1-9 0C6 8 7 3 7 3z" /><path d="M12 15.5V20M8.5 21h7" /></svg>
 )
+export const IconUsers = ({ size, ...p }: P) => (
+  <svg {...base(size)} strokeWidth={2} {...p}><circle cx="9" cy="8" r="3.5" /><circle cx="17" cy="9" r="2.8" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M15 14.5a5 5 0 0 1 6.5 5.5" /></svg>
+)
+export const IconLock = ({ size, ...p }: P) => (
+  <svg {...base(size ?? 14)} strokeWidth={2.2} {...p}><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+)
+export const IconSend = ({ size, ...p }: P) => (
+  <svg {...base(size)} strokeWidth={2} {...p}><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z" /></svg>
+)
+export const IconMedal = ({ size, ...p }: P) => (
+  <svg {...base(size)} strokeWidth={2} {...p}><circle cx="12" cy="9" r="6" /><path d="M8.5 14l-1.5 7 5-3 5 3-1.5-7" /></svg>
+)
 export const IconTrash =({ size, ...p }: P) => (
   <svg {...base(size)} strokeWidth={2} {...p}><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
 )
