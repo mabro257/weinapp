@@ -13,6 +13,7 @@ Stand 10.10.2026. Alles läuft im Browser, du musst nichts installieren.
 7. [Auf dem Handy installieren](#teil-7--app-auf-dem-handy-installieren)
 8. [Großen Weinkatalog importieren](#teil-8--großen-weinkatalog-importieren) (10 Minuten)
 9. [Update vom 12.10.2026](#teil-9--update-vom-12102026-geschmack-merkliste-open-food-facts)
+10. [Update „Sozial"](#teil-10--update-sozial-gruppen-weinabend-empfehlen-zwilling-abzeichen)
 
 Nach Teil 2 läuft die App schon online mit Beispieldaten. Du kannst sie testen, bevor die Datenbank steht.
 
@@ -234,6 +235,22 @@ Die erfundenen Beispielweine werden dabei entfernt, außer jemand hat sie schon 
 4. Supabase → SQL Editor: `07_update_merkliste_suche.sql` ausführen.
 5. GitHub → Actions → **Katalog-Import** → Run workflow. Bereits vorhandene Weine werden übersprungen, neu kommen ca. 5.900 Weine aus Open Food Facts dazu.
 6. Am Handy die App einmal komplett schließen und neu öffnen, damit die neue Version geladen wird.
+
+---
+
+## Teil 10 · Update „Sozial" (Gruppen, Weinabend, Empfehlen, Zwilling, Abzeichen)
+
+1. Netlify: **Stop builds**.
+2. Auf GitHub den Ordner `src` aus `weinapp-update-3.zip` hochladen (Unterordner `components`, `lib`, `pages` einzeln über die Upload-Links) sowie `supabase/08_sozial.sql`, `ANLEITUNG.md`, `PROJEKT.md`.
+3. Supabase → SQL Editor: `08_sozial.sql` ausführen. Fragt Supabase nach RLS, **Run and enable RLS** wählen.
+4. Netlify: **Activate builds** → **Trigger deploy**.
+5. App am Handy schließen und neu öffnen.
+6. Unter **Freunde** → **+ Neu** eine Gruppe anlegen, dann **Kopieren** bzw. **Teilen** und den Link an die Freunde schicken. Wer den Link öffnet und sich anmeldet, ist in der Gruppe.
+
+Gut zu wissen:
+- Bestehende Bewertungen sind ab jetzt für deine Gruppen sichtbar. Einzelne lassen sich auf der Weinseite über das Personen-Symbol neben der Bewertung auf privat stellen (Schloss).
+- „Gruppen Ø" auf der Weinseite zählt nur noch dich und deine Gruppen, nicht mehr alle Nutzer.
+- Beim Weinabend sieht niemand die Noten der anderen, bis der Gastgeber auflöst.
 
 ---
 

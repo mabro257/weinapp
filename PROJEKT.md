@@ -70,6 +70,22 @@ Getestet am 10.10.2026 gegen Postgres (PGlite) mit nachgebauter Supabase-Umgebun
 - **Open Food Facts** (ODbL): ca. 5.900 zusätzliche Weine, Quellenhinweis unter „Ich".
 - Jacques' Wein-Depot: kein automatischer Abzug des Sortiments (Datenbankrecht § 87b UrhG), stattdessen Abgleich gekaufter Weine auf Zuruf.
 
+## Update „Sozial"
+
+Entwürfe S1–S9 im Design-Canvas, Seite „Sozial", vom Nutzer freigegeben.
+
+| Thema | Umsetzung |
+| --- | --- |
+| Gruppen | Tabellen `groups`, `group_members`. Anlegen per `create_group`, Beitritt per Einladungslink `/beitreten/CODE` (`join_group`). Eine Person kann in mehreren Gruppen sein. Admin = Ersteller. |
+| Sichtbarkeit | `ratings.shared` (Standard an, bestehende Bewertungen sichtbar). Gilt für Note, Notiz, Ort und alle eigenen Gruppen. Pro Bewertung umschaltbar. Community-Werte zählen nur noch dich und deine Gruppen. |
+| Weinabend | `tastings`, `tasting_wines`, `ratings.tasting_id`. Noten der anderen bis zur Auflösung verborgen (Zugriffsregel), Fortschritt über `tasting_progress`. Nur der Gastgeber pflegt Weine und löst auf. Keine Blindverkostung. |
+| Gruppen-Decider | Modus „Für den Tisch": Passung je Person über den normalen Decider, Tischwert = Schnitt − halbe Differenz zum Schwächsten. |
+| Empfehlen | `recommendations`, nur an Mitglieder der eigenen Gruppen. Erscheint unter „Für dich empfohlen", mit „Auf die Merkliste". |
+| Geschmackszwilling | ab 5 gemeinsamen Weinen: 75 % Notenabstand, 25 % Profilähnlichkeit. Tipps = Weine ab 88 Punkten, die du nicht kennst. |
+| Abzeichen | 12 Abzeichen, im Browser aus eigenen Daten berechnet. „Etikett-Profi" aus dem Entwurf ersetzt durch „Notizbuch" (Fotos werden nicht pro Nutzer gezählt). |
+
+Getestet gegen Postgres (PGlite): Fremde sehen nichts, private Bewertungen bleiben privat, Weinabend-Noten erst nach Auflösung, nur Host steuert den Abend, Empfehlungen nur an Gruppenmitglieder, nach Austritt keine Sicht mehr.
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.
