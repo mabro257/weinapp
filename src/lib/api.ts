@@ -6,6 +6,7 @@ import type {
   NewWine,
   Profile,
   RatingWithWine,
+  SavedWine,
   Wine,
   WineHit,
 } from './types'
@@ -38,6 +39,11 @@ export interface Api {
   // Rebsorten
   listGrapes(): Promise<Grape[]>
   grapeCommunity(): Promise<GrapeCommunity[]>
+
+  // Merkliste (immer nur die eigene)
+  savedWines(): Promise<SavedWine[]>
+  isSaved(wineId: number): Promise<boolean>
+  setSaved(wineId: number, saved: boolean): Promise<void>
 
   // Bewertungen (immer nur die eigenen)
   myRatings(): Promise<RatingWithWine[]>

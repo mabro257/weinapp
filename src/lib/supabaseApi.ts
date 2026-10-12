@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Api } from './api'
-import type { CommunityStats, Grape, RatingWithWine, Wine, WineHit, WineType } from './types'
+import type { CommunityStats, Grape, RatingWithWine, SavedWine, Wine, WineHit, WineType } from './types'
 
 const num = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v))
 
@@ -30,6 +30,9 @@ export function createSupabaseApi(url: string, key: string): Api {
     region: (r.region as string) ?? null,
     mainGrape: (r.main_grape as string) ?? null,
     myAvg: num(r.my_avg),
+    type: (r.type as WineType) ?? null,
+    labelUrl: labelUrl((r.label_path as string) ?? null),
+    best: r.best === true,
   })
 
   const getWine = async (id: number): Promise<Wine | null> => {
@@ -190,6 +193,48 @@ export function createSupabaseApi(url: string, key: string): Api {
         avg: Number(r.avg_score),
         count: Number(r.n),
       }))
+    },
+
+    async savedWines() {
+      const { data, error } = await sb
+        .from('saved_wines')
+        .select('created_at, wines(id, name, winery, region, type, label_path, wine_grapes(position, grapes(name)))')
+        .order('created_at', { ascending: false })
+      fail(error)
+      return ((data ?? []) as Record<string, any>[])
+        .filter((r) => r.wines)
+        .map((r): SavedWine => {
+          const w = r.wines
+          const grapes = ((w.wine_grapes ?? []) as { position: number; grapes: { name: string } | null }[]).sort(
+            (a, b) => a.position - b.position,
+          )
+          return {
+            id: Number(w.id),
+            name: w.name,
+            winery: w.winery,
+            region: w.region,
+            mainGrape: grapes[0]?.grapes?.name ?? null,
+            myAvg: null,
+            type: w.type,
+            labelUrl: labelUrl(w.label_path),
+            best: false,
+            savedAt: r.created_at,
+          }
+        })
+    },
+    async isSaved(wineId) {
+      const { count, error } = await sb.from('saved_wines').select('wine_id', { count: 'exact', head: true }).eq('wine_id', wineId)
+      fail(error)
+      return (count ?? 0) > 0
+    },
+    async setSaved(wineId, saved) {
+      if (saved) {
+        const { error } = await sb.from('saved_wines').upsert({ wine_id: wineId }, { onConflict: 'user_id,wine_id', ignoreDuplicates: true })
+        fail(error)
+      } else {
+        const { error } = await sb.from('saved_wines').delete().eq('wine_id', wineId)
+        fail(error)
+      }
     },
 
     async myRatings() {

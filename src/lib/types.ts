@@ -43,6 +43,15 @@ export interface WineHit {
   region: string | null
   mainGrape: string | null
   myAvg: number | null
+  type: WineType | null
+  labelUrl: string | null
+  /** gehört zu den besten Treffern der Suche (alle Suchbegriffe exakt enthalten) */
+  best: boolean
+}
+
+/** Gemerkter Wein für die Merkliste im Profil */
+export interface SavedWine extends WineHit {
+  savedAt: string
 }
 
 export interface Rating {

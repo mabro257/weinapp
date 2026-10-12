@@ -1,5 +1,5 @@
 import type { Api } from './api'
-import type { CommunityStats, Grape, NewRating, NewWine, RatingWithWine, Wine, WineHit } from './types'
+import type { CommunityStats, Grape, NewRating, NewWine, RatingWithWine, SavedWine, Wine, WineHit } from './types'
 import { GRAPES } from './grapesData'
 import { DEMO_ME, DEMO_WINES, buildDemoRatings, type DemoRating } from './demoData'
 import { normalize } from './text'
@@ -15,6 +15,7 @@ interface Store {
   ratings: DemoRating[]
   displayName: string
   signedIn: boolean
+  saved?: { wineId: number; at: string }[]
 }
 
 function load(): Store {
@@ -46,12 +47,13 @@ export function createMockApi(): Api {
   const grapeName = (id: number | undefined) => GRAPES.find((g) => g.id === id)?.name ?? null
   const mine = () => store.ratings.filter((r) => r.userId === DEMO_ME.id)
 
-  const toHit = (wine: Wine): WineHit => {
+  const toHit = (wine: Wine, best = false): WineHit => {
     const own = mine().filter((r) => r.wineId === wine.id).map((r) => r.score)
     const a = avg(own)
     return {
       id: wine.id, name: wine.name, winery: wine.winery, region: wine.region,
       mainGrape: grapeName(wine.grapeIds[0]), myAvg: a === null ? null : Math.round(a),
+      type: wine.type, labelUrl: wine.labelUrl, best,
     }
   }
 
@@ -98,13 +100,16 @@ export function createMockApi(): Api {
         const hay = haystack(wine)
         return tokens.every((t) => hay.includes(t))
       })
-      return wait(hits.slice(0, 20).map(toHit))
+      // Beste Treffer: alle Suchwörter stehen im Weinnamen selbst
+      const inName = (wine: Wine) => tokens.every((t) => normalize(wine.name).includes(t))
+      hits.sort((a, b) => Number(inName(b)) - Number(inName(a)))
+      return wait(hits.slice(0, 20).map((w) => toHit(w, inName(w))))
     },
     async findSimilarWines(name, winery) {
       const tokens = normalize(`${name} ${winery}`).split(/\s+/).filter((t) => t.length >= 4)
       if (!tokens.length) return []
       const hits = store.wines.filter((wine) => tokens.some((t) => haystack(wine).includes(t)))
-      return wait(hits.slice(0, 3).map(toHit))
+      return wait(hits.slice(0, 3).map((w) => toHit(w)))
     },
     async getWine(id) {
       return wait(store.wines.find((x) => x.id === id) ?? null)
@@ -153,6 +158,25 @@ export function createMockApi(): Api {
         byGrape.set(g, [...(byGrape.get(g) ?? []), r.score])
       }
       return wait([...byGrape.entries()].map(([grapeId, xs]) => ({ grapeId, avg: avg(xs) ?? 0, count: xs.length })))
+    },
+
+    async savedWines(): Promise<SavedWine[]> {
+      const saved = store.saved ?? []
+      return wait(
+        saved.flatMap((s) => {
+          const wine = store.wines.find((x) => x.id === s.wineId)
+          return wine ? [{ ...toHit(wine), savedAt: s.at }] : []
+        }),
+      )
+    },
+    async isSaved(wineId) {
+      return wait((store.saved ?? []).some((s) => s.wineId === wineId))
+    },
+    async setSaved(wineId, saved) {
+      const rest = (store.saved ?? []).filter((s) => s.wineId !== wineId)
+      store.saved = saved ? [{ wineId, at: new Date().toISOString() }, ...rest] : rest
+      save()
+      await wait(null)
     },
 
     async myRatings(): Promise<RatingWithWine[]> {
