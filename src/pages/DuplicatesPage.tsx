@@ -4,7 +4,8 @@ import { api } from '../lib/api'
 import type { DuplicatePair } from '../lib/types'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
-import { Card, ErrorBox, FormHeader, Loading, Page } from '../components/ui'
+import { Card, ErrorBox, FormHeader, Page } from '../components/ui'
+import { IconCheck } from '../components/Icons'
 
 const SOURCE: Record<string, string> = { import: 'Katalog', manuell: 'selbst angelegt', demo: 'Beispiel' }
 
@@ -42,16 +43,25 @@ export default function DuplicatesPage() {
 
   return (
     <Page>
-      <FormHeader title="Dubletten prüfen" sub="Selbst angelegte und bewertete Weine" />
+      <FormHeader title="Dubletten prüfen" sub="Selbst angelegte und bewertete Weine" fallback="/ich" />
       {error && <ErrorBox message={error} />}
       <div className="flex flex-col gap-4 px-4 pt-4">
-        <div className="text-[13px] leading-normal text-ink-2">
+        <div className={`text-[13px] leading-normal text-ink-2 ${(res.data?.length ?? 0) > 0 ? '' : 'hidden'}`}>
           Beim Zusammenführen ziehen Bewertungen, Merkliste, Weinabende, Empfehlungen und das Etikettfoto zum behaltenen Wein um. Behalte möglichst den Katalogeintrag.
         </div>
-        {res.loading && !res.data && <Loading />}
-        {res.data?.length === 0 && (
-          <Card>
-            <div className="text-sm text-ink-2">Keine möglichen Dubletten gefunden.</div>
+        {res.loading && !res.data && <div className="py-8 text-center text-sm font-semibold text-muted">Suche nach Dubletten …</div>}
+        {res.error && !res.loading && (
+          <Card className="flex flex-col gap-3">
+            <div className="text-[15px] font-bold">Die Prüfung hat nicht geklappt</div>
+            <div className="text-[13px] leading-snug text-ink-2">{res.error}</div>
+            <button type="button" onClick={res.reload} className="min-h-11 self-start rounded-full bg-berry px-5 text-sm font-bold text-white">Nochmal versuchen</button>
+          </Card>
+        )}
+        {!res.loading && !res.error && res.data?.length === 0 && (
+          <Card className="flex flex-col items-center gap-2 py-8 text-center">
+            <span className="flex size-12 items-center justify-center rounded-full bg-rose-badge text-berry"><IconCheck size={24} /></span>
+            <div className="text-[17px] font-extrabold">Keine Dubletten vorhanden</div>
+            <div className="text-[13px] text-muted">Alle selbst angelegten und bewerteten Weine sind eindeutig.</div>
           </Card>
         )}
         {res.data?.map((p) => {
