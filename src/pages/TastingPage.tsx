@@ -3,11 +3,70 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { WineHit } from '../lib/types'
 import { mean } from '../lib/stats'
-import { formatDate } from '../lib/text'
+import { formatDate, tastingWhen } from '../lib/text'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
 import { Avatar, Card, ErrorBox, HeroBack, Loading, Page, Switch } from '../components/ui'
-import { IconClose, IconTrash } from '../components/Icons'
+import { IconCheck, IconClose, IconEye, IconEyeOff, IconTrash } from '../components/Icons'
+
+/** Gastgeber: festlegen, wer aus der Gruppe beim Abend dabei ist */
+function Participants({ tastingId, groupId, hostId, current, onDone }: { tastingId: number; groupId: number; hostId: string; current: string[]; onDone: () => void }) {
+  const members = useAsync(() => api.groupMembers(groupId), [groupId])
+  const [sel, setSel] = useState<Set<string>>(new Set(current))
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const save = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      await api.setTastingParticipants(tastingId, [...sel])
+      onDone()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <h2 className="m-0 text-lg font-bold">Wer ist dabei?</h2>
+      {members.loading && !members.data && <Loading />}
+      <div className="flex flex-wrap gap-2">
+        {(members.data ?? []).map((m) => {
+          const host = m.userId === hostId
+          const on = host || sel.has(m.userId)
+          return (
+            <button
+              key={m.userId}
+              type="button"
+              aria-pressed={on}
+              disabled={host}
+              onClick={() =>
+                setSel((cur) => {
+                  const n = new Set(cur)
+                  if (n.has(m.userId)) n.delete(m.userId)
+                  else n.add(m.userId)
+                  return n
+                })
+              }
+              className={`inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 text-sm ${on ? 'bg-berry font-bold text-white' : 'bg-chip font-semibold text-ink-2'}`}
+            >
+              {on && <IconCheck size={14} />}
+              {host ? 'Du (Gastgeber)' : m.displayName}
+            </button>
+          )
+        })}
+      </div>
+      <div className="text-xs leading-snug text-muted">Wer nicht dabei ist, sieht den Abend nicht und kann nicht bewerten.</div>
+      {error && <div role="alert" className="text-sm font-semibold text-berry-dark">{error}</div>}
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={onDone} disabled={busy} className="min-h-11 rounded-full bg-chip text-sm font-bold text-ink-2">Abbrechen</button>
+        <button type="button" onClick={save} disabled={busy} className="min-h-11 rounded-full bg-berry text-sm font-bold text-white disabled:opacity-50">{busy ? 'Speichert …' : 'Speichern'}</button>
+      </div>
+    </Card>
+  )
+}
 
 /** Gastgeber: Weinabend absagen bzw. löschen, wahlweise mit allen Bewertungen des Abends */
 function DeleteTasting({ tastingId, revealed, onDone }: { tastingId: number; revealed: boolean; onDone: () => void }) {
@@ -80,6 +139,7 @@ export default function TastingPage() {
   }, [id])
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<WineHit[]>([])
+  const [editPeople, setEditPeople] = useState(false)
 
   useEffect(() => {
     if (!q.trim()) {
@@ -120,6 +180,8 @@ export default function TastingPage() {
 
   const { tasting, wines, progress, mine } = res.data
   const isHost = tasting.hostId === profile.id
+  // Für den Fortschritt zählen nur die sichtbaren Weine
+  const shown = wines.filter((w) => w.visible)
   const myScore = (wineId: number) => {
     const xs = mine.filter((r) => r.wineId === wineId).map((r) => r.score)
     return xs.length ? Math.round(mean(xs)!) : null
@@ -134,8 +196,16 @@ export default function TastingPage() {
     await api.removeTastingWine(tasting.id, wineId)
     res.reload()
   }
+  const setVisible = async (wineId: number, visible: boolean) => {
+    await api.setTastingWineVisible(tasting.id, wineId, visible)
+    res.reload()
+  }
+  const showAll = async () => {
+    for (const w of wines.filter((x) => !x.visible)) await api.setTastingWineVisible(tasting.id, w.id, true)
+    res.reload()
+  }
   const reveal = async () => {
-    if (!confirm('Weinabend jetzt auflösen? Danach sehen alle die Noten.')) return
+    if (!confirm('Bewertungen jetzt aufdecken? Danach sehen alle die Noten und alle Weine des Abends.')) return
     await api.revealTasting(tasting.id)
     res.reload()
   }
@@ -148,7 +218,7 @@ export default function TastingPage() {
       <Page nav={false}>
         <div className="flex flex-col gap-2.5 rounded-b-[36px] bg-hero px-5 pt-5 pb-6 text-white">
           <div className="mb-2"><HeroBack to="/freunde" /></div>
-          <span className="text-sm font-bold opacity-90">{tasting.title} · aufgelöst</span>
+          <span className="text-sm font-bold opacity-90">{tasting.title} · aufgedeckt</span>
           <h1 className="m-0 text-[28px] leading-[1.1] font-extrabold">Sieger des Abends</h1>
           {order.length > 0 && (
             <div className="mt-2 grid items-end gap-2" style={{ gridTemplateColumns: `repeat(${order.length}, minmax(0, 1fr))` }}>
@@ -220,47 +290,88 @@ export default function TastingPage() {
     <Page nav={false}>
       <div className="flex flex-col gap-2.5 rounded-b-[36px] bg-hero px-5 pt-5 pb-16 text-white">
         <div className="mb-2"><HeroBack to="/freunde" /></div>
-        <span className="self-start rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold">Läuft · Gastgeber {isHost ? 'du' : tasting.hostName}</span>
+        <span className="self-start rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold">{tastingWhen(tasting.eventDate)} · Gastgeber {isHost ? 'du' : tasting.hostName}</span>
         <h1 className="m-0 text-[28px] leading-[1.1] font-extrabold">{tasting.title}</h1>
         <div className="text-[15px] opacity-90">{tasting.groupName} · {formatDate(tasting.eventDate)}</div>
       </div>
 
       <div className="relative -mt-10 flex flex-col gap-4 px-4">
-        <Card className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="m-0 text-lg font-bold">Wer ist dabei</h2>
-            <span className="text-[13px] font-semibold text-muted">Fortschritt</span>
-          </div>
-          {progress.map((p) => (
-            <div key={p.userId} className="flex items-center gap-3">
-              <Avatar name={p.displayName} size={40} me={p.userId === profile.id} />
-              <span className="flex-1 text-[15px] font-bold">{p.userId === profile.id ? 'Du' : p.displayName}</span>
-              <span className="flex gap-1" aria-label={`${p.rated} von ${wines.length} bewertet`}>
-                {wines.map((w, i) => (
-                  <span key={w.id} className={`size-2.5 rounded-full ${i < p.rated ? 'bg-berry' : 'bg-line'}`} />
-                ))}
-              </span>
+        {editPeople ? (
+          <Participants
+            tastingId={tasting.id}
+            groupId={tasting.groupId}
+            hostId={tasting.hostId}
+            current={progress.map((p) => p.userId)}
+            onDone={() => {
+              setEditPeople(false)
+              res.reload()
+            }}
+          />
+        ) : (
+          <Card className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h2 className="m-0 text-lg font-bold">Wer ist dabei</h2>
+              {isHost ? (
+                <button type="button" onClick={() => setEditPeople(true)} className="min-h-10 text-sm font-bold text-berry">Ändern</button>
+              ) : (
+                <span className="text-[13px] font-semibold text-muted">Fortschritt</span>
+              )}
             </div>
-          ))}
-          <div className="text-xs leading-snug text-muted">Die Noten der anderen bleiben bis zur Auflösung verborgen, damit niemand beeinflusst wird.</div>
-        </Card>
+            {progress.map((p) => (
+              <div key={p.userId} className="flex items-center gap-3">
+                <Avatar name={p.displayName} size={40} me={p.userId === profile.id} />
+                <span className="flex-1 text-[15px] font-bold">{p.userId === profile.id ? 'Du' : p.displayName}</span>
+                <span className="flex gap-1" aria-label={`${p.rated} von ${shown.length} bewertet`}>
+                  {shown.map((w, i) => (
+                    <span key={w.id} className={`size-2.5 rounded-full ${i < p.rated ? 'bg-berry' : 'bg-line'}`} />
+                  ))}
+                </span>
+              </div>
+            ))}
+            <div className="text-xs leading-snug text-muted">Die Noten der anderen bleiben verborgen, bis {isHost ? 'du' : tasting.hostName} die Bewertungen aufdeckst{isHost ? '' : 't'}. So wird niemand beeinflusst.</div>
+          </Card>
+        )}
 
         <Card className="pb-1">
-          <h2 className="m-0 mb-3 text-lg font-bold">Weine des Abends</h2>
-          {wines.length === 0 && <div className="border-t border-line py-4 text-sm text-muted">{isHost ? 'Füge unten die Weine des Abends hinzu.' : 'Der Gastgeber hat noch keine Weine eingetragen.'}</div>}
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="m-0 text-lg font-bold">Weine des Abends</h2>
+            {isHost && wines.some((w) => !w.visible) && (
+              <button type="button" onClick={showAll} className="min-h-10 text-sm font-bold text-berry">Alle zeigen</button>
+            )}
+          </div>
+          {wines.length === 0 && (
+            <div className="border-t border-line py-4 text-sm text-muted">
+              {isHost ? 'Füge unten die Weine des Abends hinzu. Sie bleiben verdeckt, bis du sie sichtbar schaltest.' : `${tasting.hostName} hat noch keinen Wein freigegeben. Sobald es losgeht, erscheint er hier.`}
+            </div>
+          )}
           {wines.map((w, i) => {
             const s = myScore(w.id)
             return (
-              <div key={w.id} className="flex items-center gap-3 border-t border-line py-3">
-                <span className="flex size-8 flex-none items-center justify-center rounded-full bg-chip text-sm font-extrabold text-ink-2">{i + 1}</span>
-                <Link to={`/wein/${w.id}`} className="flex min-w-0 flex-1 flex-col gap-0.5 text-ink no-underline">
-                  <span className="text-[15px] font-bold">{w.name}</span>
-                  <span className="truncate text-[13px] text-muted">{[w.winery, w.mainGrape].filter(Boolean).join(' · ')}</span>
+              <div key={w.id} className="flex items-center gap-2 border-t border-line py-3">
+                <Link to={`/wein/${w.id}/bewerten?abend=${tasting.id}`} className="flex min-w-0 flex-1 items-center gap-3 text-ink no-underline">
+                  <span className="flex size-8 flex-none items-center justify-center rounded-full bg-chip text-sm font-extrabold text-ink-2">{i + 1}</span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className={`text-[15px] font-bold ${w.visible ? '' : 'text-muted'}`}>{w.name}</span>
+                    <span className="truncate text-[13px] text-muted">
+                      {isHost && !w.visible ? 'verdeckt · nur du siehst ihn' : [w.winery, w.mainGrape].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                  {s !== null ? (
+                    <span className="flex h-9 min-w-[52px] flex-none items-center justify-center rounded-xl bg-rose-badge px-2.5 text-base font-extrabold text-berry">{s}</span>
+                  ) : (
+                    <span className="flex h-9 flex-none items-center rounded-full bg-berry px-3.5 text-[13px] font-bold text-white">Bewerten</span>
+                  )}
                 </Link>
-                {s !== null ? (
-                  <span className="flex h-9 min-w-[52px] flex-none items-center justify-center rounded-xl bg-rose-badge px-2.5 text-base font-extrabold text-berry">{s}</span>
-                ) : (
-                  <Link to={`/wein/${w.id}/bewerten?abend=${tasting.id}`} className="flex h-9 flex-none items-center rounded-full bg-berry px-3.5 text-[13px] font-bold text-white no-underline">Bewerten</Link>
+                {isHost && (
+                  <button
+                    type="button"
+                    aria-label={w.visible ? `${w.name} wieder verdecken` : `${w.name} für alle sichtbar schalten`}
+                    aria-pressed={w.visible}
+                    onClick={() => setVisible(w.id, !w.visible)}
+                    className={`flex size-9 flex-none items-center justify-center rounded-full ${w.visible ? 'text-muted' : 'bg-rose-badge text-berry'}`}
+                  >
+                    {w.visible ? <IconEye size={18} /> : <IconEyeOff size={18} />}
+                  </button>
                 )}
                 {isHost && (
                   <button type="button" aria-label={`${w.name} entfernen`} onClick={() => remove(w.id)} className="flex size-9 flex-none items-center justify-center rounded-full text-muted">
@@ -270,6 +381,11 @@ export default function TastingPage() {
               </div>
             )
           })}
+          {isHost && wines.length > 0 && (
+            <div className="border-t border-line py-3 text-xs leading-snug text-muted">
+              Auge durchgestrichen: verdeckt, die anderen sehen den Wein noch nicht. Antippen schaltet ihn sichtbar.
+            </div>
+          )}
           {isHost && (
             <div className="flex flex-col gap-1 border-t border-line pt-3 pb-3">
               <label htmlFor="abend-wein" className="text-[13px] font-bold text-ink-2">Wein hinzufügen</label>
@@ -288,10 +404,10 @@ export default function TastingPage() {
 
         {isHost ? (
           <button type="button" onClick={reveal} disabled={wines.length === 0} className="flex h-14 items-center justify-center rounded-full bg-berry text-base font-bold text-white disabled:opacity-50">
-            Abend auflösen
+            Bewertungen aufdecken
           </button>
         ) : (
-          <div className="px-1 text-center text-[13px] text-muted">{tasting.hostName} löst den Abend am Ende auf.</div>
+          <div className="px-1 text-center text-[13px] text-muted">{tasting.hostName} deckt am Ende die Bewertungen auf.</div>
         )}
         {isHost && <DeleteTasting tastingId={tasting.id} revealed={false} onDone={() => navigate('/freunde', { replace: true })} />}
       </div>

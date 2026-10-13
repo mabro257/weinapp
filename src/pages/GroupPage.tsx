@@ -47,10 +47,10 @@ export default function GroupPage() {
     return { matchOf, top, counts }
   }, [res.data, grapes, profile.id])
 
-  if (res.loading && !res.data) return <Page nav={false}><Loading /></Page>
-  if (res.error) return <Page nav={false}><ErrorBox message={res.error} /></Page>
+  if (res.loading && !res.data) return <Page><Loading /></Page>
+  if (res.error) return <Page><ErrorBox message={res.error} /></Page>
   const group = res.data?.group
-  if (!group || !view) return <Page nav={false}><ErrorBox message="Gruppe nicht gefunden oder du bist kein Mitglied." /></Page>
+  if (!group || !view) return <Page><ErrorBox message="Gruppe nicht gefunden oder du bist kein Mitglied." /></Page>
 
   const link = `${window.location.origin}/beitreten/${group.inviteCode}`
   const copy = async () => {
@@ -66,7 +66,7 @@ export default function GroupPage() {
     const text = `Komm in unsere Weinrunde „${group.name}": ${link}`
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'Einladung Weinbewertung', text, url: link })
+        await navigator.share({ title: 'Einladung zu WineWithFriends', text, url: link })
       } catch {
         // abgebrochen
       }
@@ -81,9 +81,9 @@ export default function GroupPage() {
   }
 
   return (
-    <Page nav={false}>
+    <Page>
       <div className="flex flex-col gap-3 rounded-b-[36px] bg-hero px-5 pt-5 pb-16 text-white">
-        <div className="mb-2"><HeroBack /></div>
+        <div className="mb-2"><HeroBack fallback="/freunde" /></div>
         <h1 className="m-0 text-[28px] leading-[1.1] font-extrabold">{group.name}</h1>
         <div className="text-[15px] opacity-90">{res.data!.members.length} Mitglieder{group.isAdmin ? ' · du bist Admin' : ''}</div>
       </div>

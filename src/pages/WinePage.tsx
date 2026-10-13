@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { WINE_TYPE_LABEL } from '../lib/types'
-import { PRICE_LABEL, TASTE, formatDate, tasteWord, type TasteKey } from '../lib/text'
+import { PRICE_LABEL, PRICE_RANGE, TASTE, formatDate, tasteWord, type TasteKey } from '../lib/text'
 import { mean } from '../lib/stats'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
-import { Card, CardTitle, ErrorBox, Hint, HeroBack, Loading, Page, ScoreRing, TagChip, TasteBar } from '../components/ui'
+import { Card, CardTitle, ErrorBox, Hint, HeroBack, Loading, Page, ScoreRing, Segmented, TagChip, TasteBar } from '../components/ui'
 import { IconBookmark, IconLock, IconPlus, IconSend, IconTrash, IconUsers } from '../components/Icons'
 import RecommendSheet from '../components/RecommendSheet'
 
@@ -16,6 +16,7 @@ export default function WinePage() {
   const [vintage, setVintage] = useState<number | 'alle'>('alle')
   const [showAll, setShowAll] = useState(false)
   const [recommendOpen, setRecommendOpen] = useState(false)
+  const [priceError, setPriceError] = useState<string | null>(null)
 
   const [savedOverride, setSavedOverride] = useState<boolean | null>(null)
   const res = useAsync(async () => {
@@ -101,7 +102,6 @@ export default function WinePage() {
               ))}
               {wine.type && <span className="rounded-full bg-white/12 px-3 py-1.5 text-[13px] font-semibold">{WINE_TYPE_LABEL[wine.type]}</span>}
               {wine.region && <span className="rounded-full bg-white/12 px-3 py-1.5 text-[13px] font-semibold">{wine.region}</span>}
-              {wine.priceClass && <span className="rounded-full bg-white/12 px-3 py-1.5 text-[13px] font-semibold">{PRICE_LABEL[wine.priceClass]}</span>}
             </div>
             <h1 className="m-0 text-[30px] leading-[1.1] font-extrabold">{wine.name}</h1>
             <div className="text-[15px] font-medium opacity-90">{[wine.winery, wine.country].filter(Boolean).join(' · ')}</div>
@@ -128,6 +128,34 @@ export default function WinePage() {
               </div>
             </div>
           </div>
+        </Card>
+
+        <Card className="flex flex-col gap-3">
+          <CardTitle right={wine.priceClass ? <span className="text-lg font-extrabold text-berry">{PRICE_LABEL[wine.priceClass]}</span> : undefined}>Preisklasse</CardTitle>
+          {wine.priceClass ? (
+            <div className="text-sm text-ink-2">Ladenpreis {PRICE_RANGE[wine.priceClass]}</div>
+          ) : (
+            <>
+              <div className="text-[13px] leading-snug text-ink-2">Noch nicht hinterlegt. Was kostet der Wein im Laden? Das hilft allen bei der Preis-Leistungs-Auswertung.</div>
+              <Segmented
+                label="Preisklasse hinterlegen"
+                value={null}
+                onChange={async (v) => {
+                  if (!v) return
+                  setPriceError(null)
+                  try {
+                    await api.setWinePrice(wine.id, v)
+                    res.reload()
+                  } catch (e) {
+                    setPriceError(e instanceof Error ? e.message : String(e))
+                  }
+                }}
+                options={[1, 2, 3, 4].map((n) => ({ value: n, label: PRICE_LABEL[n] }))}
+              />
+              <div className="text-xs text-muted">€ bis 5 € · €€ bis 10 € · €€€ bis 15 € · €€€€ über 15 €</div>
+              {priceError && <div role="alert" className="text-sm font-semibold text-berry-dark">{priceError}</div>}
+            </>
+          )}
         </Card>
 
         {view.vintages.length > 0 && (

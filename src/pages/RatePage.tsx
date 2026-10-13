@@ -98,7 +98,7 @@ export default function RatePage() {
       <div className="flex flex-col gap-4 px-4 pt-4">
         {res.data?.tasting && (
           <div className="rounded-[22px] bg-hero px-4 py-3 text-sm font-semibold text-white">
-            {res.data.tasting.tasting.title}: Die anderen sehen deine Note erst nach der Auflösung.
+            {res.data.tasting.tasting.title}: Die anderen sehen deine Note erst, wenn die Bewertungen aufgedeckt werden.
           </div>
         )}
         <Card className="flex flex-col gap-3.5">

@@ -94,14 +94,15 @@ export default function HistoryPage() {
         <Card className="px-5 pt-2 pb-1">
           {res.loading && !res.data && <Loading />}
           {res.data && list.length === 0 && <div className="py-[18px] text-sm text-muted">{all.length ? 'Keine passenden Verkostungen.' : 'Noch keine Verkostung erfasst.'}</div>}
-          {list.map((r) => {
+          {list.map((r, i) => {
             const month = formatMonth(r.tastedOn)
             const showMonth = month !== lastMonth
             lastMonth = month
+            const last = i === list.length - 1
             return (
               <div key={r.id}>
                 {showMonth && <div className="pt-3.5 pb-1 text-[13px] font-extrabold text-muted">{month}</div>}
-                <Link to={`/wein/${r.wineId}`} className="flex gap-3.5 border-b border-line py-3.5 text-ink no-underline">
+                <Link to={`/wein/${r.wineId}`} className={`flex gap-3.5 py-3.5 text-ink no-underline ${last ? '' : 'border-b border-line'}`}>
                   <ScoreBadge score={r.score} />
                   <div className="flex min-w-0 flex-col gap-1">
                     <div className="text-[15px] font-bold">{r.wineName}</div>

@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { mean, quantileInc } from '../lib/stats'
-import { TASTE, tasteWord, type TasteKey } from '../lib/text'
-import { distribution, matrix, preference, recommendations, styleOf, topWines } from '../lib/taste'
+import { PRICE_LABEL, PRICE_RANGE, TASTE, tasteWord, type TasteKey } from '../lib/text'
+import { distribution, matrix, preference, priceValue, recommendations, styleOf, topWines } from '../lib/taste'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
 import { AxisLabels, Boxplot, Card, CardTitle, ErrorBox, Hint, Loading, Page, PageTitle, ScoreBadge, Segmented, TasteBar } from '../components/ui'
@@ -27,7 +27,6 @@ export default function TastePage() {
 
   const data = useMemo(() => {
     const pref = preference(mine, grapes)
-    const prefColor = preference(mine, grapes, color)
     const rows = distribution(mine, grapes)
     const topGrapes = rows.filter((r) => r.id !== null && r.s.n >= 2).slice(0, 3)
     const byRegion = new Map<string, number[]>()
@@ -40,12 +39,11 @@ export default function TastePage() {
     const byId = new Map(grapes.map((g) => [g.id, g]))
     const reds = mine.filter((r) => r.mainGrapeId !== null && byId.get(r.mainGrapeId)?.color === 'rot').length
     const whites = mine.filter((r) => r.mainGrapeId !== null && byId.get(r.mainGrapeId)?.color === 'weiss').length
-    return { pref, prefColor, rows, topGrapes, topRegions, reds, whites, recs: recommendations(mine, grapes), cells: matrix(mine, grapes, color), top: topWines(mine) }
+    return { pref, rows, topGrapes, topRegions, reds, whites, recs: recommendations(mine, grapes), cells: matrix(mine, grapes, color), top: topWines(mine), value: priceValue(mine) }
   }, [mine, grapes, color])
 
   if (res.loading && !res.data) return <Page><Loading /></Page>
 
-  const sweet = data.prefColor.body && data.prefColor.acidity ? { b: Math.round(data.prefColor.body), a: Math.round(data.prefColor.acidity) } : null
   const sel = selected ? data.cells.flat().find((c) => `${c.body}-${c.acidity}` === selected) : undefined
   const total = data.reds + data.whites
 
@@ -127,6 +125,64 @@ export default function TastePage() {
           </Card>
         )}
 
+        {mine.length > 0 && (
+          <Card className="flex flex-col gap-3.5">
+            <CardTitle right={<Hint>Ø je Wein</Hint>}>Preis-Leistung</CardTitle>
+            {data.value.classes.some((c) => c.wines > 0) ? (
+              <>
+                <div className="flex flex-col gap-2.5">
+                  {data.value.classes.map((c) => (
+                    <div key={c.cls} className="flex items-center gap-2.5">
+                      <span className="flex w-[92px] flex-none flex-col">
+                        <span className="text-sm font-extrabold">{PRICE_LABEL[c.cls]}</span>
+                        <span className="text-[11px] text-muted">{PRICE_RANGE[c.cls]}</span>
+                      </span>
+                      <span className="relative h-3 flex-1 rounded-full bg-chip">
+                        {c.avg !== null && <span className="absolute inset-y-0 left-0 rounded-full bg-berry" style={{ width: `${Math.max(4, Math.min(100, ((c.avg - 70) / 30) * 100))}%` }} />}
+                      </span>
+                      <span className="w-[64px] flex-none text-right text-[13px]">
+                        {c.avg !== null ? <b className="text-[15px] font-extrabold">{Math.round(c.avg)}</b> : <span className="text-muted">–</span>}
+                        <span className="text-muted"> · {c.wines}</span>
+                      </span>
+                    </div>
+                  ))}
+                  <div className="text-[11px] text-muted">Balken: deine Durchschnittsnote (Achse 70–100) · Zahl dahinter: Anzahl Weine</div>
+                </div>
+                {data.value.premium !== null && (
+                  <div className="rounded-[18px] bg-chip px-3.5 py-3 text-[13px] leading-snug text-ink-2">
+                    {Math.abs(data.value.premium) < 1
+                      ? 'Weine ab 10 € gefallen dir im Schnitt nicht besser als günstigere. Der Aufpreis lohnt sich für dich kaum.'
+                      : data.value.premium > 0
+                        ? `Weine ab 10 € bewertest du im Schnitt ${Math.round(data.value.premium)} ${Math.round(data.value.premium) === 1 ? 'Punkt' : 'Punkte'} besser als günstigere.`
+                        : `Überraschung: Weine bis 10 € bewertest du im Schnitt ${Math.round(-data.value.premium)} ${Math.round(-data.value.premium) === 1 ? 'Punkt' : 'Punkte'} besser als teurere.`}
+                  </div>
+                )}
+                {data.value.bargains.length > 0 && (
+                  <div className="flex flex-col">
+                    <div className="text-[13px] font-bold text-muted">Gut und günstig (bis 10 €)</div>
+                    {data.value.bargains.map((w) => (
+                      <Link key={w.wineId} to={`/wein/${w.wineId}`} className="flex min-h-11 items-center gap-3 border-t border-line py-2.5 text-ink no-underline first:border-t-0">
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="text-[15px] font-bold">{w.name}</span>
+                          <span className="truncate text-[13px] text-muted">{[w.winery, PRICE_LABEL[w.cls]].filter(Boolean).join(' · ')}</span>
+                        </span>
+                        <span className="flex-none text-lg font-extrabold text-berry">{Math.round(w.avg)}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-sm leading-normal text-ink-2">Noch keiner deiner Weine hat eine Preisklasse. Trag sie auf der Weinseite ein, dann siehst du hier, wie viel Genuss du fürs Geld bekommst.</div>
+            )}
+            {data.value.withoutPrice > 0 && data.value.classes.some((c) => c.wines > 0) && (
+              <div className="text-xs leading-normal text-muted">
+                {data.value.withoutPrice} {data.value.withoutPrice === 1 ? 'Wein hat' : 'Weine haben'} noch keine Preisklasse. Auf der Weinseite nachtragen.
+              </div>
+            )}
+          </Card>
+        )}
+
         <Card className="flex flex-col gap-4">
           <CardTitle>Geschmacksmatrix</CardTitle>
           <div className="text-[13px] leading-normal text-ink-2">
@@ -142,7 +198,6 @@ export default function TastePage() {
                 const avg = mean(c.myScores)
                 const col = cellColor(avg === null ? null : Math.round(avg), c.grapes.length > 0)
                 const key = `${c.body}-${c.acidity}`
-                const isSweet = sweet && sweet.b === c.body && sweet.a === c.acidity
                 const isSel = selected === key
                 return (
                   <button
@@ -150,17 +205,17 @@ export default function TastePage() {
                     type="button"
                     disabled={!c.grapes.length && !c.wines.length}
                     aria-pressed={isSel}
-                    aria-label={`Körper ${c.body}, Säure ${c.acidity}: ${c.grapes.length} Rebsorten${avg !== null ? `, deine Ø ${Math.round(avg)}` : ''}${isSweet ? ', dein Geschmack' : ''}`}
+                    aria-label={`Körper ${c.body}, Säure ${c.acidity}: ${avg !== null ? `deine Ø ${Math.round(avg)}` : 'noch nichts bewertet'}`}
                     onClick={() => setSelected(isSel ? null : key)}
                     className="flex aspect-square flex-col items-center justify-center rounded-lg text-xs font-bold disabled:opacity-40"
                     style={{
                       background: col.bg,
                       color: col.fg,
-                      outline: isSel ? '3px solid #1E1B24' : isSweet ? '3px dashed #8E2A4B' : '1px solid #EEE9F0',
-                      outlineOffset: isSel || isSweet ? '-3px' : '-1px',
+                      outline: isSel ? '3px solid #1E1B24' : '1px solid #EEE9F0',
+                      outlineOffset: isSel ? '-3px' : '-1px',
                     }}
                   >
-                    {avg !== null ? Math.round(avg) : c.grapes.length || ''}
+                    {avg !== null ? Math.round(avg) : ''}
                   </button>
                 )
               })}
@@ -172,7 +227,7 @@ export default function TastePage() {
             <span>kräftig</span>
           </div>
           <div className="text-xs leading-normal text-ink-2">
-            Zahl im Feld: deine Durchschnittsnote, sonst die Anzahl Rebsorten. Je dunkler, desto besser bewertet. Gestrichelt: dein Geschmack. Feld antippen für deine Weine und die Rebsorten.
+            Zahl im Feld: deine Durchschnittsnote der Weine dort. Je dunkler, desto besser bewertet. Graue Felder: typische Rebsorten, aber noch nichts bewertet. Feld antippen für deine Weine und die Rebsorten.
           </div>
           {sel && (
             <div className="flex flex-col gap-2 rounded-[18px] bg-chip p-3.5">

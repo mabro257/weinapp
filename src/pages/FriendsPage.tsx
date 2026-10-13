@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { twins } from '../lib/social'
-import { formatDate } from '../lib/text'
+import { formatDate, tastingWhen } from '../lib/text'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
 import { Avatar, Card, CardTitle, ErrorBox, Loading, Page, PageTitle, PrimaryButton, TextInput, WineThumb } from '../components/ui'
-import { IconBookmark, IconNext, IconScale } from '../components/Icons'
+import { IconBookmark, IconClose, IconNext } from '../components/Icons'
 
 export default function FriendsPage() {
   const { grapes, profile } = useApp()
@@ -27,9 +27,10 @@ export default function FriendsPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState<Set<number>>(new Set())
+  const [hidden, setHidden] = useState<Set<number>>(new Set())
 
   const data = res.data
-  const incoming = (data?.recs ?? []).filter((r) => r.incoming)
+  const incoming = (data?.recs ?? []).filter((r) => r.incoming && !hidden.has(r.id))
   const unseen = incoming.filter((r) => !r.seen).length
   // Empfehlungen als gelesen markieren, sobald die Seite sie gezeigt hat
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function FriendsPage() {
       <div className="flex flex-col gap-4 px-4 pt-5">
         {openTastings.map((t) => (
           <Link key={t.id} to={`/weinabend/${t.id}`} className="flex flex-col gap-2.5 rounded-[28px] bg-hero p-5 text-white no-underline">
-            <span className="self-start rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold">Läuft gerade</span>
+            <span className="self-start rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold">{tastingWhen(t.eventDate)}</span>
             <span className="text-xl font-extrabold">{t.title}</span>
             <span className="text-sm opacity-90">{t.groupName} · {formatDate(t.eventDate)} · Gastgeber {t.hostId === profile.id ? 'du' : t.hostName}</span>
             <span className="flex items-center gap-2 text-sm font-bold">Zum Weinabend <IconNext size={18} /></span>
@@ -143,18 +144,39 @@ export default function FriendsPage() {
                       </span>
                     </Link>
                     {r.message && <span className="rounded-[14px] bg-chip px-3 py-2 text-[13px] leading-snug text-ink-2">„{r.message}"</span>}
-                    <button
-                      type="button"
-                      disabled={saved.has(r.wine.id)}
-                      onClick={async () => {
-                        await api.setSaved(r.wine.id, true)
-                        setSaved((s) => new Set(s).add(r.wine.id))
-                      }}
-                      className="flex min-h-10 items-center gap-1.5 self-start text-sm font-bold text-berry disabled:text-muted"
-                    >
-                      <IconBookmark size={18} filled={saved.has(r.wine.id)} />
-                      {saved.has(r.wine.id) ? 'Gemerkt' : 'Auf die Merkliste'}
-                    </button>
+                    <span className="flex flex-wrap items-center gap-x-5">
+                      <button
+                        type="button"
+                        disabled={saved.has(r.wine.id)}
+                        onClick={async () => {
+                          await api.setSaved(r.wine.id, true)
+                          setSaved((s) => new Set(s).add(r.wine.id))
+                        }}
+                        className="flex min-h-10 items-center gap-1.5 text-sm font-bold text-berry disabled:text-muted"
+                      >
+                        <IconBookmark size={18} filled={saved.has(r.wine.id)} />
+                        {saved.has(r.wine.id) ? 'Gemerkt' : 'Auf die Merkliste'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setHidden((h) => new Set(h).add(r.id))
+                          try {
+                            await api.deleteRecommendation(r.id)
+                          } catch {
+                            setHidden((h) => {
+                              const n = new Set(h)
+                              n.delete(r.id)
+                              return n
+                            })
+                          }
+                        }}
+                        className="flex min-h-10 items-center gap-1.5 text-sm font-bold text-muted"
+                      >
+                        <IconClose size={16} />
+                        Ablehnen
+                      </button>
+                    </span>
                   </div>
                 </div>
               ))}
@@ -177,15 +199,6 @@ export default function FriendsPage() {
             ))}
           </Link>
         )}
-
-        <Link to="/decider?tisch=1" className="flex items-center gap-3.5 rounded-[28px] bg-card p-5 text-ink no-underline">
-          <span className="flex size-12 flex-none items-center justify-center rounded-2xl bg-rose-badge text-berry"><IconScale size={24} /></span>
-          <span className="flex flex-1 flex-col gap-0.5">
-            <span className="text-base font-extrabold">Gemeinsam entscheiden</span>
-            <span className="text-[13px] text-muted">Welcher Wein schmeckt allen? Im Restaurant, im Laden oder für den nächsten Abend</span>
-          </span>
-          <IconNext size={18} className="flex-none text-muted" />
-        </Link>
 
         {(data?.groups.length ?? 0) > 0 && (
           <Link to="/weinabend/neu" className="flex h-14 items-center justify-center rounded-full bg-berry text-base font-bold text-white no-underline hover:bg-berry-dark">
