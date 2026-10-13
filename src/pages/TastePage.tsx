@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { mean, quantileInc } from '../lib/stats'
 import { TASTE, tasteWord, type TasteKey } from '../lib/text'
-import { distribution, matrix, preference, recommendations, styleOf } from '../lib/taste'
+import { distribution, matrix, preference, recommendations, styleOf, topWines } from '../lib/taste'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
-import { AxisLabels, Boxplot, Card, CardTitle, ErrorBox, Hint, Loading, Page, PageTitle, Segmented, TasteBar } from '../components/ui'
+import { AxisLabels, Boxplot, Card, CardTitle, ErrorBox, Hint, Loading, Page, PageTitle, ScoreBadge, Segmented, TasteBar } from '../components/ui'
 import { IconBook, IconNext } from '../components/Icons'
 
 /** Farbe einer Matrix-Zelle nach deiner Durchschnittsnote */
@@ -40,7 +40,7 @@ export default function TastePage() {
     const byId = new Map(grapes.map((g) => [g.id, g]))
     const reds = mine.filter((r) => r.mainGrapeId !== null && byId.get(r.mainGrapeId)?.color === 'rot').length
     const whites = mine.filter((r) => r.mainGrapeId !== null && byId.get(r.mainGrapeId)?.color === 'weiss').length
-    return { pref, prefColor, rows, topGrapes, topRegions, reds, whites, recs: recommendations(mine, grapes), cells: matrix(mine, grapes, color) }
+    return { pref, prefColor, rows, topGrapes, topRegions, reds, whites, recs: recommendations(mine, grapes), cells: matrix(mine, grapes, color), top: topWines(mine) }
   }, [mine, grapes, color])
 
   if (res.loading && !res.data) return <Page><Loading /></Page>
@@ -66,7 +66,7 @@ export default function TastePage() {
               data.pref[k] === null ? null : <TasteBar key={k} label={TASTE[k].label} word={tasteWord(k, data.pref[k])} mine={data.pref[k]} community={null} />,
             )}
             <div className="text-[13px] leading-normal text-muted">
-              Aus deinen {data.pref.favorites} Lieblingsweinen (ab Note {Math.round(data.pref.threshold)}). Fehlen eigene Geschmacksangaben, zählt die typische Tendenz der Rebsorte.
+              Aus deinen {data.pref.favorites} Lieblingsweinen (ab Note {Math.round(data.pref.threshold)}). Eingeordnet nach den Katalogangaben zum Wein, sonst nach der typischen Tendenz der Rebsorte, nicht nach deinen eigenen Geschmacksangaben.
             </div>
             {total > 0 && (
               <div className="flex flex-col gap-1.5">
@@ -108,8 +108,30 @@ export default function TastePage() {
           </Card>
         )}
 
+        {data.top.length > 0 && (
+          <Card className="pb-1">
+            <CardTitle right={<Hint>Ø je Wein</Hint>}>Meine Top 5</CardTitle>
+            <div className="pt-2">
+              {data.top.map((w, i) => (
+                <Link key={w.wineId} to={`/wein/${w.wineId}`} className="flex min-h-11 items-center gap-3.5 border-t border-line py-3 text-ink no-underline">
+                  <span className="w-4 flex-none text-center text-sm font-extrabold text-muted">{i + 1}</span>
+                  <ScoreBadge score={Math.round(w.avg)} size={44} />
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="text-[15px] font-bold">{w.name}</span>
+                    <span className="truncate text-[13px] text-muted">{[w.winery, w.n > 1 ? `${w.n} Verkostungen` : null].filter(Boolean).join(' · ')}</span>
+                  </span>
+                  <IconNext size={18} className="flex-none text-muted" />
+                </Link>
+              ))}
+            </div>
+          </Card>
+        )}
+
         <Card className="flex flex-col gap-4">
           <CardTitle>Geschmacksmatrix</CardTitle>
+          <div className="text-[13px] leading-normal text-ink-2">
+            Wo deine Weine liegen: eingeordnet nach Katalog bzw. Rebsorte, nicht nach deiner eigenen Angabe zu Körper und Säure.
+          </div>
           <Segmented label="Weinfarbe" value={color} onChange={(v) => { if (v) { setColor(v); setSelected(null) } }} options={[{ value: 'rot', label: 'Rot' }, { value: 'weiss', label: 'Weiß' }]} />
           <div className="flex gap-2">
             <div className="flex w-5 flex-none items-center justify-center">
@@ -126,7 +148,7 @@ export default function TastePage() {
                   <button
                     key={key}
                     type="button"
-                    disabled={!c.grapes.length}
+                    disabled={!c.grapes.length && !c.wines.length}
                     aria-pressed={isSel}
                     aria-label={`Körper ${c.body}, Säure ${c.acidity}: ${c.grapes.length} Rebsorten${avg !== null ? `, deine Ø ${Math.round(avg)}` : ''}${isSweet ? ', dein Geschmack' : ''}`}
                     onClick={() => setSelected(isSel ? null : key)}
@@ -150,13 +172,25 @@ export default function TastePage() {
             <span>kräftig</span>
           </div>
           <div className="text-xs leading-normal text-ink-2">
-            Zahl im Feld: deine Durchschnittsnote, sonst die Anzahl Rebsorten. Je dunkler, desto besser bewertet. Gestrichelt: dein Geschmack. Feld antippen für die Rebsorten.
+            Zahl im Feld: deine Durchschnittsnote, sonst die Anzahl Rebsorten. Je dunkler, desto besser bewertet. Gestrichelt: dein Geschmack. Feld antippen für deine Weine und die Rebsorten.
           </div>
           {sel && (
             <div className="flex flex-col gap-2 rounded-[18px] bg-chip p-3.5">
               <div className="text-[13px] font-bold text-ink-2">
                 Körper {tasteWord('body', sel.body)}, Säure {tasteWord('acidity', sel.acidity)}
               </div>
+              {sel.wines.length > 0 && (
+                <div className="flex flex-col">
+                  <div className="text-xs font-bold text-muted">Deine Weine hier</div>
+                  {sel.wines.slice(0, 6).map((w) => (
+                    <Link key={w.wineId} to={`/wein/${w.wineId}`} className="flex min-h-10 items-center justify-between gap-2 text-[13px] font-semibold text-ink no-underline">
+                      <span className="truncate">{w.name}</span>
+                      <span className="flex-none font-extrabold text-berry">{Math.round(w.avg)}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {sel.grapes.length > 0 && <div className="text-xs font-bold text-muted">Typische Rebsorten</div>}
               <div className="flex flex-wrap gap-2">
                 {sel.grapes.map((g) => (
                   <Link key={g.id} to={`/rebsorten/${g.id}`} className="rounded-full bg-card px-3 py-1.5 text-[13px] font-semibold text-ink no-underline">

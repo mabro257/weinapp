@@ -1,8 +1,10 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
-import { TASTE, scoreWord, tasteWord, todayIso, type TasteKey } from '../lib/text'
-import { resizeImage, useAsync } from '../lib/util'
+import { HELP, TASTE, scoreWord, tasteWord, todayIso, type TasteKey } from '../lib/text'
+import { HelpButton } from '../components/HelpButton'
+import { resizeImage, useAsync, useObjectUrl } from '../lib/util'
+import { LABEL_RATIO, LabelCamera } from '../components/LabelCamera'
 import { Card, CardTitle, ErrorBox, FormHeader, Hint, Loading, Page, PrimaryButton, Switch, TextInput } from '../components/ui'
 import { IconCamera, IconCheck, IconClose, IconMinus, IconPin, IconPlus } from '../components/Icons'
 
@@ -33,11 +35,12 @@ export default function RatePage() {
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
   const [note, setNote] = useState('')
-  const [photo, setPhoto] = useState<File | null>(null)
+  const [photo, setPhoto] = useState<Blob | null>(null)
+  const [camera, setCamera] = useState(false)
+  const preview = useObjectUrl(photo)
   const [shared, setShared] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
 
   if (res.loading && !res.data) return <Page nav={false}><Loading /></Page>
   if (res.error) return <Page nav={false}><ErrorBox message={res.error} /></Page>
@@ -99,7 +102,10 @@ export default function RatePage() {
           </div>
         )}
         <Card className="flex flex-col gap-3.5">
-          <label htmlFor="punkte" className="text-[13px] font-bold text-muted">Gesamtnote</label>
+          <div className="flex items-center gap-2">
+            <label htmlFor="punkte" className="text-[13px] font-bold text-muted">Gesamtnote</label>
+            <HelpButton help={HELP.score} />
+          </div>
           <div className="flex items-center justify-between gap-3">
             <button type="button" aria-label="Einen Punkt weniger" onClick={() => setScore((s) => clamp(s - 1))} className="flex size-[52px] flex-none items-center justify-center rounded-full bg-chip">
               <IconMinus />
@@ -136,8 +142,11 @@ export default function RatePage() {
             const cur = taste[k]
             return (
               <div key={k} role="group" aria-label={TASTE[k].label} className="flex flex-col gap-2">
-                <div className="flex justify-between text-sm font-bold">
-                  <span>{TASTE[k].label}</span>
+                <div className="flex items-center justify-between text-sm font-bold">
+                  <span className="flex items-center gap-2">
+                    {TASTE[k].label}
+                    <HelpButton help={HELP[k]} />
+                  </span>
                   <span className="font-medium text-muted">{tasteWord(k, cur)}</span>
                 </div>
                 <div className="grid grid-cols-5 gap-1.5">
@@ -208,12 +217,16 @@ export default function RatePage() {
 
         {!wine.labelUrl && (
           <>
-            <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
-            <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-3.5 rounded-[28px] border-2 border-dashed border-dash px-5 py-[18px] text-left">
-              <span className="flex size-12 flex-none items-center justify-center rounded-2xl bg-rose-badge text-berry">{photo ? <IconCheck /> : <IconCamera size={24} />}</span>
+            {camera && <LabelCamera onClose={() => setCamera(false)} onDone={(b) => { setPhoto(b); setCamera(false) }} />}
+            <button type="button" onClick={() => setCamera(true)} className="flex items-center gap-3.5 rounded-[28px] border-2 border-dashed border-dash px-5 py-[18px] text-left">
+              {preview ? (
+                <img src={preview} alt="Etikett" className="h-[60px] flex-none rounded-xl object-cover" style={{ aspectRatio: `${LABEL_RATIO}` }} />
+              ) : (
+                <span className="flex size-12 flex-none items-center justify-center rounded-2xl bg-rose-badge text-berry"><IconCamera size={24} /></span>
+              )}
               <span className="flex flex-col gap-0.5">
-                <span className="text-[15px] font-bold">{photo ? 'Foto ausgewählt' : 'Etikett fotografieren'}</span>
-                <span className="text-[13px] text-muted">{photo ? 'Tippen, um ein anderes Foto zu wählen.' : 'Optional. Dieser Wein hat noch kein Bild.'}</span>
+                <span className="text-[15px] font-bold">{photo ? 'Etikett aufgenommen' : 'Etikett fotografieren'}</span>
+                <span className="text-[13px] text-muted">{photo ? 'Tippen, um neu aufzunehmen.' : 'Optional. Dieser Wein hat noch kein Bild.'}</span>
               </span>
             </button>
           </>

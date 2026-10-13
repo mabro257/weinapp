@@ -204,6 +204,11 @@ export default function WinePage() {
           <IconPlus size={20} />
           Neue Bewertung
         </Link>
+        {wine.editable && (
+          <Link to={`/wein/${wine.id}/bearbeiten`} className="flex min-h-11 items-center justify-center text-sm font-bold text-berry no-underline">
+            Angaben zum Wein korrigieren
+          </Link>
+        )}
       </div>
       {recommendOpen && <RecommendSheet wine={wine} myScore={view.my} onClose={() => setRecommendOpen(false)} />}
     </Page>

@@ -6,7 +6,7 @@ import { formatDate } from '../lib/text'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
 import { Card, CardTitle, Page, ScoreBadge, WineThumb } from '../components/ui'
-import { IconClose, IconNext, IconPlus, IconScale, IconSearch } from '../components/Icons'
+import { IconClose, IconNext, IconPlus, IconSearch } from '../components/Icons'
 
 function greeting() {
   const h = new Date().getHours()
@@ -112,16 +112,7 @@ export default function HomePage() {
       </div>
 
       <div className="flex flex-col gap-4 px-4 pt-5">
-        <Link to="/decider" className="flex items-center gap-4 rounded-[28px] bg-hero px-5 py-[22px] text-white no-underline">
-          <span className="flex size-[52px] flex-none items-center justify-center rounded-[18px] bg-white/15">
-            <IconScale size={26} />
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="text-[17px] font-extrabold">Im Restaurant unschlüssig?</span>
-            <span className="text-sm font-medium opacity-90">Weine von der Karte vergleichen</span>
-          </span>
-          <IconNext size={20} />
-        </Link>
+
 
         <Card className="pb-1">
           <CardTitle

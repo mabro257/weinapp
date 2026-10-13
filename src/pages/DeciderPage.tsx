@@ -135,12 +135,20 @@ export default function DeciderPage() {
 
   return (
     <Page>
-      <PageTitle title="Restaurant-Decider" sub={mode === 'tisch' ? 'Welche Flasche passt zum ganzen Tisch?' : 'Welcher Wein von der Karte passt zu dir?'} />
+      <PageTitle title="Decider" sub={mode === 'tisch' ? 'Unsicher, welcher Wein allen schmeckt?' : 'Unsicher zwischen mehreren Weinen?'} />
       {base.error && <ErrorBox message={base.error} />}
 
       <div className="flex flex-col gap-4 px-4 pt-5">
+        <div className="flex flex-col gap-2.5 px-1">
+          <div className="text-[15px] leading-normal text-ink-2">
+            Füge die Weine hinzu, zwischen denen du schwankst. Der Decider vergleicht sie mit deinem Geschmack und sagt, welcher am besten passt und warum.
+          </div>
+          <div className="text-[13px] leading-normal text-muted">
+            Zum Beispiel an der Weinkarte im Restaurant, vor dem Regal im Supermarkt, beim Weinhändler oder wenn du ein Geschenk aussuchst.
+          </div>
+        </div>
         <div className="rounded-full bg-card p-1">
-          <Segmented label="Für wen" value={mode} onChange={(v) => v && setMode(v)} options={[{ value: 'ich', label: 'Nur für mich' }, { value: 'tisch', label: 'Für den Tisch' }]} />
+          <Segmented label="Für wen" value={mode} onChange={(v) => v && setMode(v)} options={[{ value: 'ich', label: 'Nur für mich' }, { value: 'tisch', label: 'Für mehrere' }]} />
         </div>
 
         {mode === 'tisch' && (
@@ -168,7 +176,7 @@ export default function DeciderPage() {
               ) : undefined
             }
           >
-            Weine von der Karte
+            Weine zur Auswahl
           </CardTitle>
           <div className="pt-2">
             {items.map((it, idx) => {
@@ -183,7 +191,7 @@ export default function DeciderPage() {
                       <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${it.wineId ? 'bg-chip text-ink-2' : 'bg-rose-badge text-berry-dark'}`}>
                         {it.wineId ? 'aus dem Katalog' : 'nur Rebsorte'}
                       </span>
-                      <label className="sr-only" htmlFor={`preis-${it.key}`}>Preis laut Karte</label>
+                      <label className="sr-only" htmlFor={`preis-${it.key}`}>Preis</label>
                       <input
                         id={`preis-${it.key}`}
                         inputMode="decimal"
@@ -207,7 +215,7 @@ export default function DeciderPage() {
             id="karte"
             type="search"
             autoComplete="off"
-            placeholder={items.length ? 'Weiteren Wein oder Rebsorte hinzufügen' : 'Wein oder Rebsorte von der Karte'}
+            placeholder={items.length ? 'Weiteren Wein oder Rebsorte hinzufügen' : 'Wein oder Rebsorte hinzufügen'}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="mt-2 h-12 w-full rounded-full border-0 bg-chip px-[18px] text-base outline-none"
@@ -228,12 +236,12 @@ export default function DeciderPage() {
               ))}
             </div>
           )}
-          {items.length < 2 && <div className="pt-3 text-[13px] text-muted">Füge mindestens zwei Weine hinzu. Ist ein Wein nicht im Katalog, wähle einfach seine Rebsorte.</div>}
+          {items.length < 2 && <div className="pt-3 text-[13px] text-muted">Füge mindestens zwei Weine hinzu. Ist ein Wein nicht im Katalog, wähle einfach seine Rebsorte. Den Preis von Karte oder Regal kannst du dazuschreiben.</div>}
         </Card>
 
         {mode === 'tisch' && tableResults.length > 0 && (
           <>
-            <h2 className="m-0 mt-2 px-1 text-lg font-bold">Empfehlung für den Tisch</h2>
+            <h2 className="m-0 mt-2 px-1 text-lg font-bold">Empfehlung für alle</h2>
             {tableResults.map((r, i) => {
               const first = i === 0
               return (
@@ -241,7 +249,7 @@ export default function DeciderPage() {
                   <div className="flex items-center gap-3.5">
                     <div className={`flex size-[60px] flex-none flex-col items-center justify-center rounded-[20px] ${first ? 'bg-white text-hero' : 'bg-rose-badge text-berry'}`}>
                       <span className="text-[22px] leading-none font-extrabold">{r.score}</span>
-                      <span className="text-[10px] font-bold">Tisch</span>
+                      <span className="text-[10px] font-bold">Alle</span>
                     </div>
                     <div className="flex min-w-0 flex-col gap-1">
                       {first && <span className="self-start rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold">Beste Wahl für alle</span>}
@@ -269,7 +277,7 @@ export default function DeciderPage() {
               )
             })}
             <div className="px-1 text-xs leading-normal text-muted">
-              Tischwert: Durchschnitt aller Passungen, abgewertet, wenn jemand am Tisch deutlich darunter liegt. So gewinnt der Wein, mit dem alle glücklich sind.
+              Gemeinsamer Wert: Durchschnitt aller Passungen, abgewertet, wenn jemand deutlich darunter liegt. So gewinnt der Wein, mit dem alle glücklich sind.
             </div>
           </>
         )}

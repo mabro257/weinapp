@@ -7,7 +7,7 @@ import { downloadCsv, useAsync } from '../lib/util'
 import { resetDemo } from '../lib/mockApi'
 import { useApp } from '../App'
 import { Card, ErrorBox, Loading, Page, PageTitle, ScoreBadge, TagChip, WineThumb } from '../components/ui'
-import { IconBookmark, IconDownload, IconLock, IconLogout, IconMedal, IconNext, IconSearch } from '../components/Icons'
+import { IconBookmark, IconDownload, IconGlass, IconLock, IconLogout, IconMedal, IconNext, IconSearch } from '../components/Icons'
 
 export default function HistoryPage() {
   const { profile, refreshProfile } = useApp()
@@ -60,6 +60,17 @@ export default function HistoryPage() {
           <span className="flex-1 text-[15px] font-bold">Meine Abzeichen</span>
           <IconNext size={18} className="text-muted" />
         </Link>
+
+        {profile.isAdmin && (
+          <Link to="/dubletten" className="flex items-center gap-3.5 rounded-[22px] bg-card px-4 py-3.5 text-ink no-underline">
+            <span className="flex size-10 flex-none items-center justify-center rounded-full bg-rose-badge text-berry"><IconGlass size={22} /></span>
+            <span className="flex flex-1 flex-col gap-0.5">
+              <span className="text-[15px] font-bold">Dubletten prüfen</span>
+              <span className="text-xs text-muted">Admin: doppelte Weine zusammenführen</span>
+            </span>
+            <IconNext size={18} className="text-muted" />
+          </Link>
+        )}
 
         <div className="flex h-[52px] items-center gap-2.5 rounded-full bg-card px-[18px]">
           <IconSearch size={20} className="flex-none text-muted" />

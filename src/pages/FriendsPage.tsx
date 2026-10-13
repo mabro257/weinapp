@@ -181,8 +181,8 @@ export default function FriendsPage() {
         <Link to="/decider?tisch=1" className="flex items-center gap-3.5 rounded-[28px] bg-card p-5 text-ink no-underline">
           <span className="flex size-12 flex-none items-center justify-center rounded-2xl bg-rose-badge text-berry"><IconScale size={24} /></span>
           <span className="flex flex-1 flex-col gap-0.5">
-            <span className="text-base font-extrabold">Gemeinsam im Restaurant</span>
-            <span className="text-[13px] text-muted">Welche Flasche passt zu allen am Tisch?</span>
+            <span className="text-base font-extrabold">Gemeinsam entscheiden</span>
+            <span className="text-[13px] text-muted">Welcher Wein schmeckt allen? Im Restaurant, im Laden oder für den nächsten Abend</span>
           </span>
           <IconNext size={18} className="flex-none text-muted" />
         </Link>
