@@ -19,6 +19,7 @@ Stand 10.10.2026. Alles läuft im Browser, du musst nichts installieren.
 13. [Update 6: Preisklassen, III Freunde, Weinabend löschen](#teil-13--update-6-preisklassen-iii-freunde-weinabend-löschen)
 14. [Update 7: Weinabend-Teilnehmer, verdeckte Weine, Preis-Leistung](#teil-14--update-7-weinabend-teilnehmer-verdeckte-weine-preis-leistung)
 15. Update 8: nur App-Dateien hochladen (kein SQL), Netlify wie gewohnt: **Stop builds** → Upload → **Activate builds** → **Trigger deploy**
+16. Update 9: Dateien hochladen, dann Supabase → SQL Editor → `13_dubletten_schneller.sql` → **Run** (dauert etwa eine Minute, Ergebnis `ohne_schluessel 0`), danach Netlify **Activate builds** → **Trigger deploy**
 
 Nach Teil 2 läuft die App schon online mit Beispieldaten. Du kannst sie testen, bevor die Datenbank steht.
 

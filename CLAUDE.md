@@ -49,7 +49,11 @@ Stand 13.10.2026, App-Name **WineWithFriends** (Titel, Manifest, Login, Einladun
 
 | `12_weinabend_preis.sql` | `tasting_participants` + `is_tasting_participant` (ohne Einträge = ganze Gruppe), `set_tasting_participants`, `tasting_wines.visible` (neu = verdeckt), Bewertungsregel im Abend (restriktive Policy), `set_wine_price` | SQL Editor, nach 11 |
 
-`05` braucht `num_words` aus `09`. Live beim Nutzer: bis Update 7 (12). Geliefert, Upload offen: Update 8 (nur App-Dateien, kein SQL). **Am Anfang beim Nutzer nachfragen.**
+| `13_dubletten_schneller.sql` | Spalte `wines.match_key` (= token_key aus Name + Weingut, per Trigger) mit GIN-Trigramm-Index; `similar_wine_ids` über diesen Index (60 Kandidaten); `wine_similarity` ohne Einzelbuchstaben im Weingut und Deckel 0,6 bei klar anderem Weingut; Dublette ab 0,92 | SQL Editor, nach 12 (Backfill ca. 1 Min.) |
+
+`05` braucht `num_words` (09) und `match_key`/`token_key` (13). Frische Installation: 01–04, 06–13, dann 05 per Action. Live beim Nutzer: bis Update 8 (App, kein SQL). Geliefert, Upload offen: Update 9 (13, Decider, Dubletten-Seite). **Am Anfang beim Nutzer nachfragen.**
+
+Supabase bricht App-Anfragen nach **8 Sekunden** ab: Funktionen, die über den ganzen Katalog laufen, mit `tools/perf-dubletten.mjs` (voller Katalog in PGlite) messen. Stand Update 9: Dubletten-Prüfung 1,1 s bei 83 Weinen (wächst linear, ca. 13 ms je bewertetem/angelegtem Wein), „Gibt es schon?" 25–80 ms.
 
 Texte: Nutzer will **kurze, untechnische Texte** (keine Erklärungen, wie gerechnet wird). Geschmacksmatrix startet mit Weiß.
 

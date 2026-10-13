@@ -154,6 +154,18 @@ Getestet: 12 gegen Postgres (PGlite), auch zweimal hintereinander. Geprüft wurd
 
 Getestet: Typecheck, Build und im Demo-Modus Datum ändern, Bewertung im Weinabend ändern (keine Doppelbewertung), „Ich" und „Meine Bewertungen" samt Filtern, Matrix, Decider und Login.
 
+## Update 9 (13.10.2026)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Decider: Auswahl | Derselbe Wein bzw. dieselbe Rebsorte kann nicht zweimal gewählt werden (in der Trefferliste „schon gewählt", sonst Hinweis). Im Modus „Für mehrere" erscheint „Wähle mindestens eine Person aus.", wenn niemand aktiv ist. |
+| Decider: Einordnung | Über den Ergebnissen ein Satz mit Begründung, z. B. „Barolo liegt knapp vor Riesling, denn du kennst ihn schon und gibst ihm im Schnitt 89." Abstufung: klare Sache (≥ 5 Punkte), knapp vorn (2–4), knappe Entscheidung (< 2); Hinweis bei geringer Sicherheit. Für mehrere: „bester Kompromiss, alle liegen zwischen X und Y". |
+| Decider: Preis | Preisfeld und Preisanzeige entfernt. |
+| Dubletten-Seite | Zeigt „Keine Dubletten vorhanden" bzw. einen Fehler mit „Nochmal versuchen" statt einer leeren Seite. |
+| Dubletten-Prüfung | Ursache der leeren Seite: Die Prüfung dauerte mit dem vollen Katalog ca. 15 s, Supabase bricht nach 8 s ab. Jetzt gespeicherter Vergleichsschlüssel mit Index: 1,1 s. Zudem genauer: Dublette erst bei praktisch gleichem Namen und passendem Weingut („J. Riehl" ≠ „J. Bäumer", „Prosecco Brut" ≠ „Prosecco Rosé Brut"). |
+
+Getestet: Laufzeit und Ergebnis mit dem vollen Katalog (106.907 Weine) in PGlite: 13 Paare mit Fehlalarmen in 14,6 s vorher, 3 echte Paare in 1,1 s nachher. Dazu die Dubletten-Tests aus Update 5, der Katalog-Import, Typecheck, Build und im Demo-Modus Decider (doppelte Auswahl, Hinweis ohne Person, Einordnung) und Dubletten-Seite (Paar, danach leer).
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.
