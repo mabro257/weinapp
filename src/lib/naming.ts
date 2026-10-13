@@ -11,11 +11,19 @@ const STOP = new Set([
   'de', 'del', 'dei', 'della', 'delle', 'di', 'da', 'du', 'des', 'la', 'le', 'les', 'il', 'lo', 'el', 'los', 'las', 'the', 'and', 'et', 'und', 'y', 'e',
   'doc', 'docg', 'aoc', 'aop', 'igp', 'igt', 'dop', 'do', 'doca', 'qba', 'vdp', 'ac',
   'vin', 'vino', 'vinho', 'wine', 'wein', 'rotwein', 'weisswein', 'rosewein', 'wijn',
+  'trocken', 'dry',
 ])
+
+/** Zahlen als Wort: „III“ = „3“ = „drei“ (wie public.token_key) */
+const NUM: Record<string, string> = {
+  1: 'eins', 2: 'zwei', 3: 'drei', 4: 'vier', 5: 'funf', 6: 'sechs', 7: 'sieben', 8: 'acht', 9: 'neun', 10: 'zehn', 11: 'elf', 12: 'zwolf',
+  ii: 'zwei', iii: 'drei', iv: 'vier', vi: 'sechs', vii: 'sieben', viii: 'acht', ix: 'neun', xi: 'elf', xii: 'zwolf',
+}
+const tok = (t: string) => NUM[t] ?? t
 
 /** Sortierte Wörter ohne Füllwörter, Reihenfolge egal: „Lugana - I Frati“ = „I Frati Lugana“ */
 export function tokenKey(s: string): string {
-  return [...new Set(norm(s).split(' ').filter((t) => t && !STOP.has(t)))].sort().join(' ')
+  return [...new Set(norm(s).split(' ').filter((t) => t && !STOP.has(t)).map(tok))].sort().join(' ')
 }
 
 const WINERY_GENERIC = new Set([
@@ -86,6 +94,33 @@ export interface NameIssue {
   fix: string
 }
 
+/**
+ * Name ohne Weingut, oder null, wenn das Weingut nicht im Namen steht.
+ * Erkennt auch andere Schreibweisen: „DREI FREUNDE Rosé“ bei Weingut „III Freunde“, „Probestein Riesling“ bei „Weingut Probestein“.
+ */
+function stripWinery(n: string, w: string): string | null {
+  const hasText = (s: string) => /[A-Za-zÀ-ÿ]{2,}/.test(s)
+  // 1. wörtlich enthalten
+  const f = fold(n)
+  const i = f.indexOf(fold(w))
+  const startOk = i === 0 || /[^a-z0-9]/.test(f[i - 1] ?? ' ')
+  const endOk = i + w.length >= f.length || /[^a-z0-9]/.test(f[i + w.length] ?? ' ')
+  if (i >= 0 && startOk && endOk) {
+    const fix = tidy(n.slice(0, i) + ' ' + n.slice(i + w.length))
+    return hasText(fix) ? fix : null
+  }
+  // 2. alle kennzeichnenden Wörter des Weinguts kommen im Namen vor (Zahlen als Wort, ohne Domaine/Weingut …)
+  const all = new Set(words(tokenKey(w)))
+  const key = [...all].filter((t) => !WINERY_GENERIC.has(t))
+  if (!key.length) return null
+  const parts = n.split(/\s+/)
+  const partKey = (p: string) => tok(norm(p))
+  const nameKeys = new Set(parts.map(partKey))
+  if (!key.every((t) => nameKeys.has(t))) return null
+  const fix = tidy(parts.filter((p) => !all.has(partKey(p))).join(' '))
+  return hasText(fix) ? fix : null
+}
+
 /** Name nach der Regel bereinigt (alle Korrekturen auf einmal), oder null, wenn alles passt */
 export function suggestName(name: string, winery: string): string | null {
   let n = name.trim()
@@ -109,14 +144,8 @@ export function nameIssues(name: string, winery: string): NameIssue[] {
   }
   const w = winery.trim()
   if (w.length >= 3) {
-    const f = fold(n)
-    const i = f.indexOf(fold(w))
-    const startOk = i === 0 || /[^a-z0-9]/.test(f[i - 1] ?? ' ')
-    const endOk = i + w.length >= f.length || /[^a-z0-9]/.test(f[i + w.length] ?? ' ')
-    if (i >= 0 && startOk && endOk) {
-      const fix = tidy(n.slice(0, i) + ' ' + n.slice(i + w.length))
-      if (/[A-Za-zÀ-ÿ]{2,}/.test(fix)) out.push({ key: 'weingut', text: 'Das Weingut steht schon im eigenen Feld und muss nicht in den Namen.', fix })
-    }
+    const fix = stripWinery(n, w)
+    if (fix) out.push({ key: 'weingut', text: 'Das Weingut steht schon im eigenen Feld und muss nicht in den Namen.', fix })
   }
   const letters = n.replace(/[^A-Za-zÀ-ÿ]/g, '')
   if (letters.length >= 4 && letters === letters.toUpperCase()) {

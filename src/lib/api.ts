@@ -90,6 +90,8 @@ export interface Api {
   addTastingWine(tastingId: number, wineId: number): Promise<void>
   removeTastingWine(tastingId: number, wineId: number): Promise<void>
   revealTasting(tastingId: number): Promise<void>
+  /** Gastgeber: Weinabend löschen; mit deleteRatings werden alle Bewertungen des Abends für alle gelöscht. Liefert die Zahl gelöschter Bewertungen. */
+  deleteTasting(tastingId: number, deleteRatings: boolean): Promise<number>
   /** alle sichtbaren Bewertungen eines aufgelösten Abends (eigene und geteilte der anderen) */
   tastingRatings(tastingId: number): Promise<FriendRating[]>
 }

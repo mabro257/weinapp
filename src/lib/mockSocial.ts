@@ -40,7 +40,7 @@ type Social = Pick<
   Api,
   | 'myGroups' | 'groupMembers' | 'createGroup' | 'joinGroup' | 'leaveGroup' | 'friends' | 'friendRatings'
   | 'recommendations' | 'recommend' | 'markRecommendationsSeen'
-  | 'tastings' | 'tasting' | 'createTasting' | 'addTastingWine' | 'removeTastingWine' | 'revealTasting' | 'tastingRatings'
+  | 'tastings' | 'tasting' | 'createTasting' | 'addTastingWine' | 'removeTastingWine' | 'revealTasting' | 'deleteTasting' | 'tastingRatings'
 >
 
 export function createSocialMock(ctx: Ctx): Social {
@@ -159,6 +159,18 @@ export function createSocialMock(ctx: Ctx): Social {
       if (t && t.host === DEMO_ME.id) t.status = 'aufgeloest'
       ctx.save()
       await ctx.wait(null)
+    },
+    async deleteTasting(tastingId, deleteRatings) {
+      const store = ctx.get()
+      const t = store.social.tastings.find((x) => x.id === tastingId)
+      if (!t || t.host !== DEMO_ME.id) throw new Error('Nur der Gastgeber kann den Weinabend löschen')
+      const before = store.ratings.length
+      store.ratings = deleteRatings
+        ? store.ratings.filter((r) => r.tastingId !== tastingId)
+        : store.ratings.map((r) => (r.tastingId === tastingId ? { ...r, tastingId: null } : r))
+      store.social.tastings = store.social.tastings.filter((x) => x.id !== tastingId)
+      ctx.save()
+      return ctx.wait(before - store.ratings.length)
     },
     async tastingRatings(tastingId) {
       return ctx.wait(

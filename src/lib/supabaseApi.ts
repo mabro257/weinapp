@@ -546,6 +546,11 @@ export function createSupabaseApi(url: string, key: string): Api {
       const { error } = await sb.from('tastings').update({ status: 'aufgeloest' }).eq('id', tastingId)
       fail(error)
     },
+    async deleteTasting(tastingId, deleteRatings) {
+      const { data, error } = await sb.rpc('delete_tasting', { p_tasting: tastingId, p_delete_ratings: deleteRatings })
+      fail(error)
+      return Number(data ?? 0)
+    },
     async tastingRatings(tastingId) {
       const { data, error } = await sb.from('ratings').select(`user_id, ${RATING_COLS}`).eq('tasting_id', tastingId)
       fail(error)
