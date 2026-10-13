@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Weinbewertung',
-        short_name: 'Wein',
-        description: 'Weine bewerten, Verkostungen festhalten, im Restaurant entscheiden.',
+        name: 'WineWithFriends',
+        short_name: 'WineWithFriends',
+        description: 'Weine bewerten, Verkostungen mit Freunden festhalten, im Restaurant entscheiden.',
         lang: 'de',
         start_url: '/',
         display: 'standalone',

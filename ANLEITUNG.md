@@ -1,4 +1,4 @@
-# Anleitung: Weinbewertungs-App online bringen
+# Anleitung: WineWithFriends online bringen
 
 Stand 10.10.2026. Alles läuft im Browser, du musst nichts installieren.
 
@@ -14,6 +14,7 @@ Stand 10.10.2026. Alles läuft im Browser, du musst nichts installieren.
 8. [Großen Weinkatalog importieren](#teil-8--großen-weinkatalog-importieren) (10 Minuten)
 9. [Update vom 12.10.2026](#teil-9--update-vom-12102026-geschmack-merkliste-open-food-facts)
 10. [Update „Sozial"](#teil-10--update-sozial-gruppen-weinabend-empfehlen-zwilling-abzeichen)
+11. [Update 4: WineWithFriends, Etikett-Kamera, Zahlen-Suche](#teil-11--update-4-winewithfriends-etikett-kamera-zahlen-suche)
 
 Nach Teil 2 läuft die App schon online mit Beispieldaten. Du kannst sie testen, bevor die Datenbank steht.
 
@@ -251,6 +252,19 @@ Gut zu wissen:
 - Bestehende Bewertungen sind ab jetzt für deine Gruppen sichtbar. Einzelne lassen sich auf der Weinseite über das Personen-Symbol neben der Bewertung auf privat stellen (Schloss).
 - „Gruppen Ø" auf der Weinseite zählt nur noch dich und deine Gruppen, nicht mehr alle Nutzer.
 - Beim Weinabend sieht niemand die Noten der anderen, bis der Gastgeber auflöst.
+
+---
+
+## Teil 11 · Update 4: WineWithFriends, Etikett-Kamera, Zahlen-Suche
+
+1. Netlify: **Stop builds**.
+2. Auf GitHub die Ordner aus `weinapp-update-4.zip` hochladen (Tabelle in der Nachricht von Claude). Gleichnamige Dateien werden überschrieben.
+3. Supabase → SQL Editor: `09_update_zahlen_freunde.sql` ausführen. Am Ende erscheint die Liste der III-Freunde-Weine mit „DREI FREUNDE".
+4. Netlify: **Activate builds** → **Trigger deploy** → **Deploy project**.
+5. Optional, damit überall der neue Name steht:
+   - Supabase → **Authentication** → **Emails**: in **Confirm signup** und **Magic Link** den Betreff auf `Dein Anmeldecode für WineWithFriends` ändern → **Save**.
+   - Supabase → **Authentication** → **Emails** → **SMTP Settings**: **Sender name** `WineWithFriends` → **Save**.
+6. Am Handy die App schließen und neu öffnen. Der Name auf dem Home-Bildschirm ändert sich erst, wenn du die App einmal löschst und neu zum Home-Bildschirm hinzufügst (iPhone). Beim ersten Foto fragt die App nach dem Kamerazugriff: **Erlauben**.
 
 ---
 

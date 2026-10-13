@@ -1,4 +1,4 @@
-# Weinbewertungs-App: Projektstand
+# WineWithFriends: Projektstand
 
 Stand 10.10.2026. Ersetzt die ursprüngliche Übergabe. Alle hier genannten Entscheidungen sind vom Nutzer bestätigt.
 
@@ -86,9 +86,20 @@ Entwürfe S1–S9 im Design-Canvas, Seite „Sozial", vom Nutzer freigegeben.
 
 Getestet gegen Postgres (PGlite): Fremde sehen nichts, private Bewertungen bleiben privat, Weinabend-Noten erst nach Auflösung, nur Host steuert den Abend, Empfehlungen nur an Gruppenmitglieder, nach Austritt keine Sicht mehr.
 
+## Update 4 (13.10.2026)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Name | Die App heißt **WineWithFriends** (Seitentitel, Manifest, Home-Bildschirm, Anmeldeseite, Einladung). |
+| III Freunde | Die Linie heißt „DREI FREUNDE", nicht „ELF FREUNDE" (3 Weine, `09` benennt um, `06` korrigiert). |
+| Zahlen in der Suche | „3", „drei" und „III" finden sich gegenseitig (Zahlen 1–12, römisch ab II). Im Suchtext steht hinter Ziffer bzw. römischer Zahl das Zahlwort, Ziffern in der Suchanfrage werden zum Wort. Jahreszahlen bleiben unberührt. |
+| Etikett-Kamera | Eigene Kamera-Ansicht mit Etikett-Rahmen (Hochformat 4:5 wie die Vorschaubilder). Das Foto wird auf den Rahmen zugeschnitten, danach Vorschau mit „Nochmal"/„Verwenden". Fotos aus der Galerie werden mittig auf 4:5 zugeschnitten. Ohne Kamerazugriff bleibt die Galerie. |
+| EAN-Scanner | Geprüft und verworfen: nur ca. 5.900 Weine (Open Food Facts) haben einen Barcode, X-Wines keinen. |
+
+Getestet: `09` gegen Postgres (PGlite) inkl. zweitem Lauf und erneutem `06`, Suche „3/drei/iii freunde", „3 Talente", „No. 1"; Typecheck, Build; Kamera im Demo-Modus mit simulierter Kamera (Zuschnitt stimmt mit dem Rahmen überein), Meldung ohne Kamerazugriff. Nicht getestet: echte Handykamera.
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.
 - Admin-Oberfläche in der App (Freigabe, Dubletten) statt SQL, falls gewünscht.
 - Gewichte im Decider nach ersten Erfahrungen nachjustieren.
-- Barcode-Scan über Open Food Facts (nicht geprüft).

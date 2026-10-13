@@ -1,4 +1,4 @@
-# Weinbewertung
+# WineWithFriends
 
 Mobile Web-App (PWA) für einen Freundeskreis: Weine bewerten, Verkostungen festhalten, im Restaurant entscheiden, persönliche Boxplots je Rebsorte.
 
