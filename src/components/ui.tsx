@@ -22,15 +22,28 @@ export function PageTitle({ title, sub }: { title: string; sub?: string }) {
   )
 }
 
-/** Kopfzeile für Formularseiten: runder Zurück-Button plus Titel */
-export function FormHeader({ title, sub, closeIcon }: { title: string; sub?: string; closeIcon?: ReactNode }) {
+/**
+ * Zurück im Verlauf. Wurde die App direkt auf dieser Seite geöffnet (z. B. über einen Einladungslink),
+ * gibt es keinen Verlauf: dann zur Ausweichseite.
+ */
+function useBack(fallback = '/') {
   const navigate = useNavigate()
+  return () => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0
+    if (idx > 0) navigate(-1)
+    else navigate(fallback, { replace: true })
+  }
+}
+
+/** Kopfzeile für Formularseiten: runder Zurück-Button plus Titel */
+export function FormHeader({ title, sub, closeIcon, fallback }: { title: string; sub?: string; closeIcon?: ReactNode; fallback?: string }) {
+  const back = useBack(fallback)
   return (
     <div className="flex items-center gap-3 px-4 pt-5">
       <button
         type="button"
         aria-label="Zurück"
-        onClick={() => navigate(-1)}
+        onClick={back}
         className="flex size-11 flex-none items-center justify-center rounded-full bg-card"
       >
         {closeIcon ?? <IconBack />}
@@ -43,8 +56,8 @@ export function FormHeader({ title, sub, closeIcon }: { title: string; sub?: str
   )
 }
 
-export function HeroBack({ to }: { to?: string }) {
-  const navigate = useNavigate()
+export function HeroBack({ to, fallback }: { to?: string; fallback?: string }) {
+  const back = useBack(fallback)
   const cls = 'flex size-11 items-center justify-center rounded-full bg-white/15 text-white'
   if (to)
     return (
@@ -53,7 +66,7 @@ export function HeroBack({ to }: { to?: string }) {
       </Link>
     )
   return (
-    <button type="button" aria-label="Zurück" onClick={() => navigate(-1)} className={cls}>
+    <button type="button" aria-label="Zurück" onClick={back} className={cls}>
       <IconBack />
     </button>
   )
