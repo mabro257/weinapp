@@ -1,5 +1,6 @@
 import type {
   CommunityStats,
+  DuplicatePair,
   Friend,
   FriendRating,
   Group,
@@ -40,8 +41,16 @@ export interface Api {
   findSimilarWines(name: string, winery: string): Promise<WineHit[]>
   getWine(id: number): Promise<Wine | null>
   createWine(input: NewWine): Promise<number>
+  /** Admin oder Ersteller (solange ungeprüft): Stammdaten korrigieren */
+  updateWine(id: number, input: NewWine): Promise<void>
   uploadLabel(wineId: number, file: Blob): Promise<void>
   wineCommunity(wineId: number): Promise<CommunityStats[]>
+
+  // Admin: Dubletten
+  duplicateCandidates(): Promise<DuplicatePair[]>
+  /** Wein `from` in `into` überführen, alles zieht um */
+  mergeWines(from: number, into: number): Promise<void>
+  dismissDuplicate(a: number, b: number): Promise<void>
 
   // Rebsorten
   listGrapes(): Promise<Grape[]>

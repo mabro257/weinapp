@@ -1,5 +1,6 @@
 import type { Api } from './api'
-import type { CommunityStats, Grape, NewRating, NewWine, RatingWithWine, SavedWine, Wine, WineHit } from './types'
+import type { CommunityStats, DuplicatePair, Grape, NewRating, NewWine, RatingWithWine, SavedWine, Wine, WineHit } from './types'
+import { wineSimilarity } from './naming'
 import { GRAPES } from './grapesData'
 import { DEMO_ME, DEMO_WINES, buildDemoRatings, type DemoRating } from './demoData'
 import { normalize, numWords, searchTokens } from './text'
@@ -18,6 +19,16 @@ interface Store {
   signedIn: boolean
   saved?: { wineId: number; at: string }[]
   social: SocialStore
+  /** zusammengeführte Weine: alte ID → neue ID */
+  merged?: Record<number, number>
+  /** als „kein Duplikat" markierte Paare „a-b" */
+  dismissed?: string[]
+}
+
+/** Doppelt angelegter Wein, damit die Dubletten-Prüfung im Demo-Modus etwas zeigt */
+const DEMO_DUPLICATE: Wine = {
+  id: 26, name: 'Kabinett Riesling', winery: 'Probestein', country: 'Deutschland', region: 'Mosel',
+  type: 'weiss', priceClass: null, grapeIds: [20], body: null, acidity: null, labelUrl: null,
 }
 
 function load(): Store {
@@ -27,7 +38,7 @@ function load(): Store {
   } catch {
     // Speicher nicht verfügbar: mit frischen Demo-Daten starten
   }
-  return { wines: DEMO_WINES, ratings: buildDemoRatings(), displayName: DEMO_ME.displayName, signedIn: true, social: initialSocial() }
+  return { wines: [...DEMO_WINES, DEMO_DUPLICATE], ratings: buildDemoRatings(), displayName: DEMO_ME.displayName, signedIn: true, social: initialSocial() }
 }
 
 function avg(xs: number[]): number | null {
@@ -57,6 +68,9 @@ export function createMockApi(): Api {
       region: wine?.region ?? null,
       country: wine?.country ?? null,
       mainGrapeId: wine?.grapeIds[0] ?? null,
+      wineBody: wine?.body ?? null,
+      wineAcidity: wine?.acidity ?? null,
+      wineType: wine?.type ?? null,
     }
   }
 
@@ -119,19 +133,63 @@ export function createMockApi(): Api {
       return wait(hits.slice(0, 20).map((w) => toHit(w, inName(w))))
     },
     async findSimilarWines(name, winery) {
-      const tokens = normalize(`${name} ${winery}`).split(/\s+/).filter((t) => t.length >= 4)
-      if (!tokens.length) return []
-      const hits = store.wines.filter((wine) => tokens.some((t) => haystack(wine).includes(t)))
-      return wait(hits.slice(0, 3).map((w) => toHit(w)))
+      if (name.trim().length < 3) return []
+      const hits = store.wines
+        .map((w) => ({ w, s: wineSimilarity(name, winery, w.name, w.winery) }))
+        .filter((x) => x.s >= 0.45)
+        .sort((a, b) => b.s - a.s)
+      return wait(hits.slice(0, 3).map((x) => toHit(x.w)))
     },
     async getWine(id) {
-      return wait(store.wines.find((x) => x.id === id) ?? null)
+      const target = store.merged?.[id] ?? id
+      const wine = store.wines.find((x) => x.id === target)
+      return wait(wine ? { ...wine, editable: true } : null)
     },
     async createWine(input: NewWine) {
-      const id = Math.max(0, ...store.wines.map((x) => x.id)) + 1
+      const id = Math.max(0, ...store.wines.map((x) => x.id), ...Object.keys(store.merged ?? {}).map(Number)) + 1
       store.wines = [...store.wines, { ...input, id, body: null, acidity: null, labelUrl: null }]
       save()
       return wait(id)
+    },
+    async updateWine(id, input) {
+      store.wines = store.wines.map((w) => (w.id === id ? { ...w, ...input } : w))
+      save()
+      await wait(null)
+    },
+    async duplicateCandidates() {
+      const rated = (id: number) => store.ratings.filter((r) => r.wineId === id).length
+      const out: DuplicatePair[] = []
+      const ws = store.wines
+      for (let i = 0; i < ws.length; i++)
+        for (let j = i + 1; j < ws.length; j++) {
+          const [a, b] = [ws[i], ws[j]]
+          if (a.type && b.type && a.type !== b.type) continue
+          if ((store.dismissed ?? []).includes(`${Math.min(a.id, b.id)}-${Math.max(a.id, b.id)}`)) continue
+          const s = wineSimilarity(a.name, a.winery, b.name, b.winery)
+          if (s < 0.8) continue
+          const side = (w: Wine) => ({ id: w.id, name: w.name, winery: w.winery, source: w.id > 25 ? 'manuell' : 'import', ratings: rated(w.id) })
+          out.push({ a: side(b), b: side(a), score: s })
+        }
+      return wait(out)
+    },
+    async mergeWines(from, into) {
+      const fromWine = store.wines.find((w) => w.id === from)
+      store.ratings = store.ratings.map((r) => (r.wineId === from ? { ...r, wineId: into } : r))
+      const saved = store.saved ?? []
+      store.saved = saved.some((s) => s.wineId === into) ? saved.filter((s) => s.wineId !== from) : saved.map((s) => (s.wineId === from ? { ...s, wineId: into } : s))
+      store.social.recs = store.social.recs.map((r) => (r.wineId === from ? { ...r, wineId: into } : r))
+      store.social.tastings = store.social.tastings.map((t) => ({ ...t, wineIds: [...new Set(t.wineIds.map((w) => (w === from ? into : w)))] }))
+      store.wines = store.wines
+        .filter((w) => w.id !== from)
+        .map((w) => (w.id === into && !w.labelUrl && fromWine?.labelUrl ? { ...w, labelUrl: fromWine.labelUrl } : w))
+      store.merged = { ...(store.merged ?? {}), [from]: into }
+      save()
+      await wait(null)
+    },
+    async dismissDuplicate(a, b) {
+      store.dismissed = [...(store.dismissed ?? []), `${Math.min(a, b)}-${Math.max(a, b)}`]
+      save()
+      await wait(null)
     },
     async uploadLabel(wineId, file) {
       // Im Demo-Modus als Data-URL speichern (nur auf diesem Gerät)

@@ -50,7 +50,7 @@ export function createSupabaseApi(url: string, key: string): Api {
   })
 
   const RATING_COLS =
-    'id, wine_id, score, vintage, tasted_on, body, acidity, tannin, note, tags, shared, tasting_id, wines(name, winery, region, country, wine_grapes(grape_id, position))'
+    'id, wine_id, score, vintage, tasted_on, body, acidity, tannin, note, tags, shared, tasting_id, wines(name, winery, region, country, type, body, acidity, wine_grapes(grape_id, position))'
   const WINE_COLS = 'id, name, winery, region, type, label_path, wine_grapes(position, grapes(name))'
 
   const toRating = (r: Record<string, any>): RatingWithWine => {
@@ -74,6 +74,9 @@ export function createSupabaseApi(url: string, key: string): Api {
       region: wine.region ?? null,
       country: wine.country ?? null,
       mainGrapeId: grapes.length ? Number(grapes[0].grape_id) : null,
+      wineBody: num(wine.body),
+      wineAcidity: num(wine.acidity),
+      wineType: (wine.type as WineType) ?? null,
     }
   }
 
@@ -106,11 +109,14 @@ export function createSupabaseApi(url: string, key: string): Api {
   const getWine = async (id: number): Promise<Wine | null> => {
     const { data, error } = await sb
       .from('wines')
-      .select('id, name, winery, country, region, type, price_class, body, acidity, label_path, merged_into, wine_grapes(grape_id, position)')
+      .select('id, name, winery, country, region, type, price_class, body, acidity, label_path, merged_into, created_by, status, wine_grapes(grape_id, position)')
       .eq('id', id)
       .maybeSingle()
     fail(error)
     if (!data) return null
+    const { data: s } = await sb.auth.getSession()
+    const uid = s.session?.user.id
+    const { data: me } = uid ? await sb.from('profiles').select('is_admin').eq('id', uid).maybeSingle() : { data: null }
     // Zusammengeführte Dublette: auf den Zielwein umleiten
     if (data.merged_into) return getWine(Number(data.merged_into))
     const grapes = ((data.wine_grapes ?? []) as { grape_id: number; position: number }[])
@@ -128,7 +134,14 @@ export function createSupabaseApi(url: string, key: string): Api {
       body: num(data.body),
       acidity: num(data.acidity),
       labelUrl: labelUrl(data.label_path),
+      editable: me?.is_admin === true || (data.created_by === uid && data.status === 'offen'),
     }
+  }
+
+  const saveGrapes = async (wineId: number, grapeIds: number[]) => {
+    if (!grapeIds.length) return
+    const { error } = await sb.from('wine_grapes').insert(grapeIds.map((g, i) => ({ wine_id: wineId, grape_id: g, position: i + 1 })))
+    fail(error)
   }
 
   return {
@@ -197,13 +210,44 @@ export function createSupabaseApi(url: string, key: string): Api {
         .single()
       fail(error)
       const wineId = Number(data!.id)
-      if (input.grapeIds.length) {
-        const { error: e2 } = await sb
-          .from('wine_grapes')
-          .insert(input.grapeIds.map((g, i) => ({ wine_id: wineId, grape_id: g, position: i + 1 })))
-        fail(e2)
-      }
+      await saveGrapes(wineId, input.grapeIds)
       return wineId
+    },
+    async updateWine(id, input) {
+      const { data, error } = await sb
+        .from('wines')
+        .update({
+          name: input.name.trim(),
+          winery: input.winery?.trim() || null,
+          country: input.country?.trim() || null,
+          region: input.region?.trim() || null,
+          type: input.type,
+          price_class: input.priceClass,
+        })
+        .eq('id', id)
+        .select('id')
+      fail(error)
+      if (!data?.length) throw new Error('Du darfst diesen Wein nicht ändern.')
+      const { error: e2 } = await sb.from('wine_grapes').delete().eq('wine_id', id)
+      fail(e2)
+      await saveGrapes(id, input.grapeIds)
+    },
+    async duplicateCandidates() {
+      const { data, error } = await sb.rpc('duplicate_candidates')
+      fail(error)
+      return ((data ?? []) as Record<string, any>[]).map((r) => ({
+        a: { id: Number(r.a_id), name: r.a_name, winery: r.a_winery, source: r.a_source, ratings: Number(r.a_ratings) },
+        b: { id: Number(r.b_id), name: r.b_name, winery: r.b_winery, source: r.b_source, ratings: Number(r.b_ratings) },
+        score: Number(r.score),
+      }))
+    },
+    async mergeWines(from, into) {
+      const { error } = await sb.rpc('merge_wines', { p_from: from, p_into: into })
+      fail(error)
+    },
+    async dismissDuplicate(a, b) {
+      const { error } = await sb.rpc('dismiss_duplicate', { p_a: a, p_b: b })
+      fail(error)
     },
     async uploadLabel(wineId, file) {
       const path = `${wineId}/${crypto.randomUUID()}.webp`

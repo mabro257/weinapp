@@ -34,16 +34,21 @@ export interface Profile {
   threshold: number
 }
 
-/** Geschmacksprofil einer Bewertung: eigene Angabe, sonst Tendenz der Hauptrebsorte */
-function ratingProfile(r: RatingWithWine, byId: Map<number, Grape>) {
+/**
+ * Neutrale Einordnung eines Weins, unabhängig von der eigenen Geschmacksangabe:
+ * Körper und Säure aus dem Katalog, sonst die typische Tendenz der Hauptrebsorte (Glossar).
+ */
+export function wineProfile(r: RatingWithWine, byId: Map<number, Grape>) {
   const g = r.mainGrapeId !== null ? byId.get(r.mainGrapeId) : undefined
+  const typeColor = r.wineType === 'rot' || r.wineType === 'weiss' ? r.wineType : null
   return {
-    body: r.body ?? g?.body ?? null,
-    acidity: r.acidity ?? g?.acidity ?? null,
-    tannin: r.tannin ?? g?.tannin ?? null,
-    color: g?.color ?? null,
+    body: r.wineBody ?? g?.body ?? null,
+    acidity: r.wineAcidity ?? g?.acidity ?? null,
+    tannin: g?.tannin ?? null,
+    color: g?.color ?? typeColor,
   }
 }
+const ratingProfile = wineProfile
 
 /** Bevorzugtes Profil: Durchschnitt der Weine, die mindestens deinen Median erreichen */
 export function preference(mine: RatingWithWine[], grapes: Grape[], color?: 'rot' | 'weiss'): Profile {
@@ -63,28 +68,51 @@ export interface Cell {
   acidity: number
   grapes: Grape[]
   myScores: number[]
+  /** eigene Weine in diesem Feld (Durchschnitt je Wein) */
+  wines: { wineId: number; name: string; avg: number }[]
 }
 
-/** Matrix Körper (1–5) x Säure (1–5) für eine Weinfarbe */
+/** Matrix Körper (1–5) x Säure (1–5) für eine Weinfarbe, Weine nach neutraler Einordnung */
 export function matrix(mine: RatingWithWine[], grapes: Grape[], color: 'rot' | 'weiss'): Cell[][] {
   const rows: Cell[][] = []
   for (let a = 5; a >= 1; a--) {
     const row: Cell[] = []
-    for (let b = 1; b <= 5; b++) row.push({ body: b, acidity: a, grapes: [], myScores: [] })
+    for (let b = 1; b <= 5; b++) row.push({ body: b, acidity: a, grapes: [], myScores: [], wines: [] })
     rows.push(row)
   }
-  const cell = (b: number, a: number) => rows[5 - a][b - 1]
+  const cell = (b: number, a: number) => rows[5 - Math.round(a)][Math.round(b) - 1]
   const byId = new Map(grapes.map((g) => [g.id, g]))
   for (const g of grapes) {
     if (g.color !== color || !g.body || !g.acidity || !g.short) continue
     cell(g.body, g.acidity).grapes.push(g)
   }
+  const perWine = new Map<number, { name: string; scores: number[]; c: Cell }>()
   for (const r of mine) {
-    const g = r.mainGrapeId !== null ? byId.get(r.mainGrapeId) : undefined
-    if (!g || g.color !== color || !g.body || !g.acidity) continue
-    cell(g.body, g.acidity).myScores.push(r.score)
+    const p = wineProfile(r, byId)
+    if (p.color !== color || !p.body || !p.acidity) continue
+    const c = cell(p.body, p.acidity)
+    c.myScores.push(r.score)
+    const cur = perWine.get(r.wineId) ?? { name: r.wineName, scores: [], c }
+    cur.scores.push(r.score)
+    perWine.set(r.wineId, cur)
   }
+  for (const [wineId, v] of perWine) v.c.wines.push({ wineId, name: v.name, avg: mean(v.scores)! })
+  for (const row of rows) for (const c of row) c.wines.sort((x, y) => y.avg - x.avg)
   return rows
+}
+
+/** Eigene Lieblingsweine: Durchschnitt je Wein über alle Verkostungen, unabhängig von Zeitpunkt und Rebsorte */
+export function topWines(mine: RatingWithWine[], limit = 5) {
+  const m = new Map<number, { wineId: number; name: string; winery: string | null; scores: number[] }>()
+  for (const r of mine) {
+    const cur = m.get(r.wineId) ?? { wineId: r.wineId, name: r.wineName, winery: r.winery, scores: [] }
+    cur.scores.push(r.score)
+    m.set(r.wineId, cur)
+  }
+  return [...m.values()]
+    .map((w) => ({ ...w, avg: mean(w.scores)!, n: w.scores.length, best: Math.max(...w.scores) }))
+    .sort((a, b) => b.avg - a.avg || b.best - a.best || b.n - a.n || a.name.localeCompare(b.name, 'de'))
+    .slice(0, limit)
 }
 
 export interface Recommendation {

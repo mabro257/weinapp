@@ -67,3 +67,44 @@ export function tasteWord(key: TasteKey, v: number | null): string {
 }
 
 export const PRICE_LABEL = ['', '€', '€€', '€€€', '€€€€']
+
+/** Erklärungen für das Fragezeichen bei der Bewertung */
+export interface HelpText {
+  title: string
+  what: string
+  how: string
+  low?: { label: string; examples: string }
+  high?: { label: string; examples: string }
+  note?: string
+}
+
+export const HELP: Record<TasteKey | 'score', HelpText> = {
+  score: {
+    title: 'Gesamtnote',
+    what: 'Wie gut dir der Wein gefällt, auf einer Skala bis 100. Es geht um deinen Eindruck, nicht um Preis oder Ruf.',
+    how: 'Orientierung: unter 80 eher nicht nochmal, 80–84 gut, 85–89 sehr gut, 90–94 hervorragend, ab 95 außergewöhnlich. Mit − und + feinjustieren.',
+    note: 'Bleib bei deinem eigenen Maßstab, dann werden Statistik und Decider genauer.',
+  },
+  body: {
+    title: 'Körper',
+    what: 'Wie schwer und voll sich der Wein im Mund anfühlt. Vergleich: Magermilch, Vollmilch, Sahne.',
+    how: 'Wein kurz im Mund bewegen: Wirkt er leicht und wässrig oder dicht, rund und fast ölig? Mehr Alkohol, Holzfass und Reife machen ihn kräftiger.',
+    low: { label: 'leicht', examples: 'Riesling Kabinett, Vinho Verde, Beaujolais' },
+    high: { label: 'kräftig', examples: 'Amarone, Primitivo, im Holz gereifter Chardonnay' },
+  },
+  acidity: {
+    title: 'Säure',
+    what: 'Die Frische des Weins. Säure macht ihn lebendig und saftig, wenig Säure wirkt weich und rund.',
+    how: 'Nach dem Schlucken achten: Läuft dir an den Wangenseiten das Wasser im Mund zusammen? Je stärker, desto mehr Säure. Nicht mit Süße verwechseln.',
+    low: { label: 'mild', examples: 'Viognier, Grenache, Primitivo' },
+    high: { label: 'frisch', examples: 'Riesling, Sauvignon Blanc, Barbera' },
+  },
+  tannin: {
+    title: 'Tannin',
+    what: 'Gerbstoffe aus Schalen, Kernen und Holz, vor allem im Rotwein. Sie fühlen sich trocken und leicht pelzig an, wie kräftiger schwarzer Tee.',
+    how: 'Spür an Zahnfleisch und Zunge: Bleibt ein trocknender, rauer Film zurück? Je stärker, desto mehr Tannin.',
+    low: { label: 'weich', examples: 'Pinot Noir, Gamay, Dornfelder' },
+    high: { label: 'kräftig', examples: 'Nebbiolo (Barolo), Cabernet Sauvignon, Tannat' },
+    note: 'Bei Weiß- und Roséwein meist leer lassen.',
+  },
+}

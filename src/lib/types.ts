@@ -34,6 +34,15 @@ export interface Wine {
   body: number | null
   acidity: number | null
   labelUrl: string | null
+  /** darf der aktuelle Nutzer den Wein bearbeiten (Admin oder eigener, noch ungeprüfter Eintrag) */
+  editable?: boolean
+}
+
+/** Mögliche Dublette für die Admin-Prüfung */
+export interface DuplicatePair {
+  a: { id: number; name: string; winery: string | null; source: string; ratings: number }
+  b: { id: number; name: string; winery: string | null; source: string; ratings: number }
+  score: number
 }
 
 export interface WineHit {
@@ -78,6 +87,10 @@ export interface RatingWithWine extends Rating {
   region: string | null
   country: string | null
   mainGrapeId: number | null
+  /** neutrale Einordnung des Weins aus dem Katalog (nicht die eigene Angabe) */
+  wineBody: number | null
+  wineAcidity: number | null
+  wineType: WineType | null
 }
 
 export interface CommunityStats {
