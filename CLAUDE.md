@@ -47,7 +47,11 @@ Stand 13.10.2026, App-Name **WineWithFriends** (Titel, Manifest, Login, Einladun
 
 | `11_iii_freunde_weinabend.sql` | `token_key` mit Zahlwörtern (III = 3 = drei) und ohne „trocken/dry", III Freunde: „DREI FREUNDE Rosé" in „Rosé" zusammengeführt, „DREI FREUNDE" aus Namen entfernt, `delete_tasting(id, mit_bewertungen)` | SQL Editor, nach 10b |
 
-`05` braucht `num_words` aus `09`. Live beim Nutzer: bis Update 5 (10a/10b). Geliefert, Upload offen: Update 6 (11, Preisklassen, Weinabend löschen). **Am Anfang beim Nutzer nachfragen.**
+| `12_weinabend_preis.sql` | `tasting_participants` + `is_tasting_participant` (ohne Einträge = ganze Gruppe), `set_tasting_participants`, `tasting_wines.visible` (neu = verdeckt), Bewertungsregel im Abend (restriktive Policy), `set_wine_price` | SQL Editor, nach 11 |
+
+`05` braucht `num_words` aus `09`. Live beim Nutzer: bis Update 6 (11). Geliefert, Upload offen: Update 7 (12, Weinabend-Teilnehmer/verdeckte Weine, Preis-Leistung u. a.). **Am Anfang beim Nutzer nachfragen.**
+
+Weinabend-Begriffe: „Bewertungen aufdecken" (nicht „auflösen"), Status in der DB bleibt `aufgeloest`. Zurück-Buttons nutzen `useBack` in `ui.tsx` (ohne Verlauf → Ausweichseite). Schrift: `font-variant-ligatures: no-common-ligatures`, sonst fehlt in „fi" der i-Punkt.
 
 Preisklassen (Nutzer, 13.10.2026): € bis 5 €, €€ bis 10 €, €€€ bis 15 €, €€€€ über 15 € (Ladenpreis). Gespeichert wird weiter 1–4.
 

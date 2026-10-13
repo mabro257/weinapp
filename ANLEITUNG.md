@@ -17,6 +17,7 @@ Stand 10.10.2026. Alles läuft im Browser, du musst nichts installieren.
 11. [Update 4: WineWithFriends, Etikett-Kamera, Zahlen-Suche](#teil-11--update-4-winewithfriends-etikett-kamera-zahlen-suche)
 12. [Update 5: Namensregel, Dubletten, Geschmack, Hilfe](#teil-12--update-5-namensregel-dubletten-geschmack-hilfe)
 13. [Update 6: Preisklassen, III Freunde, Weinabend löschen](#teil-13--update-6-preisklassen-iii-freunde-weinabend-löschen)
+14. [Update 7: Weinabend-Teilnehmer, verdeckte Weine, Preis-Leistung](#teil-14--update-7-weinabend-teilnehmer-verdeckte-weine-preis-leistung)
 
 Nach Teil 2 läuft die App schon online mit Beispieldaten. Du kannst sie testen, bevor die Datenbank steht.
 
@@ -293,6 +294,18 @@ So legst du ab jetzt Weine an: **Name** wie auf dem Etikett, aber ohne Weingut u
 5. App am Handy schließen und neu öffnen. Unter **Ich → Dubletten prüfen** entscheiden, ob „Riesling" und „Grauburgunder" von III Freunde dieselben sind wie die Katalogeinträge „Riesling" und „Grauburgunder Trocken".
 
 Weinabend löschen: als Gastgeber auf der Seite des Abends ganz unten **Weinabend absagen** bzw. **Weinabend löschen**, Schalter **Alle Bewertungen löschen** nach Wunsch, dann **Endgültig löschen**.
+
+---
+
+## Teil 14 · Update 7: Weinabend-Teilnehmer, verdeckte Weine, Preis-Leistung
+
+1. Netlify: **Stop builds**.
+2. Auf GitHub die Ordner aus `weinapp-update-7.zip` hochladen (Tabelle in der Nachricht von Claude).
+3. Supabase → **SQL Editor** → **New query**: Inhalt von `12_weinabend_preis.sql` → **Run**. Fragt Supabase nach RLS, **Run and enable RLS** wählen. Ergebnis: „Success. No rows returned".
+4. Netlify: **Activate builds** → **Deploys** → **Trigger deploy** → **Deploy project**.
+5. App am Handy schließen und neu öffnen.
+
+So läuft ein Weinabend jetzt: Beim Anlegen wählst du, wer dabei ist. Weine fügst du vorab hinzu, sie bleiben verdeckt (Auge durchgestrichen). Wenn ihr einen Wein probiert, tippst du auf das Auge, dann sehen und bewerten ihn alle. Am Ende tippst du auf **Bewertungen aufdecken**.
 
 ---
 

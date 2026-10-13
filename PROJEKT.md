@@ -125,6 +125,22 @@ Getestet: 10a/10b gegen Postgres (PGlite), auch zweimal hintereinander. Geprüft
 
 Getestet: 11 gegen Postgres (PGlite), auch zweimal hintereinander, zusammen mit erneutem 06. Bewertungen ziehen beim Zusammenführen mit um, nur der Gastgeber darf löschen, beide Löschvarianten funktionieren. Dazu Typecheck, Build und im Demo-Modus Namenshilfe, Preistext und Weinabend löschen.
 
+## Update 7 (13.10.2026)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Einladungslink | Gruppenseite mit Menü unten. „Zurück" führt ohne Verlauf (App über Link geöffnet) zu „Freunde" bzw. zur Startseite. |
+| Weinabend: Teilnehmer | Der Gastgeber wählt beim Anlegen und später („Ändern"), wer aus der Gruppe dabei ist. Nur Teilnehmer sehen den Abend und können bewerten. Ältere Abende: ganze Gruppe. |
+| Weinabend: verdeckte Weine | Neue Weine sind verdeckt; der Gastgeber schaltet sie mit dem Auge einzeln sichtbar oder „Alle zeigen". Teilnehmer sehen und bewerten nur sichtbare Weine (auch in der Datenbank abgesichert). Nach dem Aufdecken sind alle sichtbar. |
+| Weinabend: Bedienung | Klick auf einen Wein führt immer zur Bewertung. Button „Bewertungen aufdecken" statt „Abend auflösen". Datum: „Noch 3 Tage", „Morgen", „Heute", danach „Läuft". |
+| Freunde | Decider-Kachel entfernt (nur im Menü). Erhaltene Empfehlungen lassen sich „Ablehnen" (löschen). |
+| Geschmacksmatrix | Zahl nur bei bewerteten Weinen, keine Rebsorten-Anzahl, keine gestrichelte Markierung mehr. |
+| Preisklasse | Immer auf der Weinseite. Fehlt sie, kann jeder sie mit einem Tipp nachtragen (danach nur Admin/Ersteller änderbar). |
+| Preis-Leistung | Unter „Geschmack": Durchschnittsnote je Preisklasse (Ø je Wein), Aussage „Weine ab 10 € bewertest du X Punkte besser", „Gut und günstig (bis 10 €)", Hinweis auf Weine ohne Preisklasse. |
+| Kleinigkeiten | i-Punkt in „Profil" (Schrift-Ligatur abgeschaltet), keine Trennlinie unter dem letzten Wein unter „Ich". |
+
+Getestet: 12 gegen Postgres (PGlite), auch zweimal hintereinander. Geprüft wurden die Teilnehmerregeln, verdeckte Weine, Bewerten nur sichtbarer Weine und nur während der Abend läuft, Preisklasse nachtragen und Empfehlung ablehnen. Dabei wurde ein Fehler gefunden und behoben: Der Gastgeber konnte einen neuen Abend nicht anlegen. Dazu Typecheck, Build und im Demo-Modus Einladungslink, Weinabend, Preisklasse, Preis-Leistung, Matrix und „Ich". Nicht getestet: die Sicht eines Teilnehmers in der App (im Demo-Modus bist du immer Gastgeber).
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.
