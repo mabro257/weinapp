@@ -1,16 +1,73 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { WineHit } from '../lib/types'
 import { mean } from '../lib/stats'
 import { formatDate } from '../lib/text'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
-import { Avatar, Card, ErrorBox, HeroBack, Loading, Page } from '../components/ui'
-import { IconClose } from '../components/Icons'
+import { Avatar, Card, ErrorBox, HeroBack, Loading, Page, Switch } from '../components/ui'
+import { IconClose, IconTrash } from '../components/Icons'
+
+/** Gastgeber: Weinabend absagen bzw. löschen, wahlweise mit allen Bewertungen des Abends */
+function DeleteTasting({ tastingId, revealed, onDone }: { tastingId: number; revealed: boolean; onDone: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [withRatings, setWithRatings] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const label = revealed ? 'Weinabend löschen' : 'Weinabend absagen'
+
+  if (!open)
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="flex min-h-11 items-center justify-center gap-2 text-sm font-bold text-berry">
+        <IconTrash size={18} />
+        {label}
+      </button>
+    )
+
+  const run = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      await api.deleteTasting(tastingId, withRatings)
+      onDone()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className="flex flex-col gap-3.5">
+      <h2 className="m-0 text-lg font-bold">{label}?</h2>
+      <div className="text-[13px] leading-normal text-ink-2">Der Abend verschwindet für alle Mitglieder der Gruppe. Das lässt sich nicht rückgängig machen.</div>
+      <div className="flex items-center justify-between gap-4 rounded-[18px] bg-chip px-4 py-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <span id="abend-bewertungen" className="text-[15px] font-bold">Alle Bewertungen löschen</span>
+          <span className="text-[13px] leading-snug text-muted">
+            {withRatings
+              ? 'Die Bewertungen dieses Abends werden für jeden Teilnehmer gelöscht.'
+              : `Die Bewertungen bleiben in den Verläufen der Teilnehmer, ohne Bezug zum Abend.${revealed ? '' : ' Bisher verdeckte Noten werden damit wie normale Bewertungen für die Gruppe sichtbar.'}`}
+          </span>
+        </div>
+        <Switch checked={withRatings} onChange={setWithRatings} labelledBy="abend-bewertungen" />
+      </div>
+      {error && <div role="alert" className="rounded-2xl bg-rose-badge px-4 py-3 text-sm font-semibold text-berry-dark">{error}</div>}
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => setOpen(false)} disabled={busy} className="min-h-12 rounded-full bg-chip text-[15px] font-bold text-ink-2">
+          Abbrechen
+        </button>
+        <button type="button" onClick={run} disabled={busy} className="min-h-12 rounded-full bg-berry text-[15px] font-bold text-white disabled:opacity-50">
+          {busy ? 'Löscht …' : 'Endgültig löschen'}
+        </button>
+      </div>
+    </Card>
+  )
+}
 
 export default function TastingPage() {
   const id = Number(useParams().id)
+  const navigate = useNavigate()
   const { profile } = useApp()
   const res = useAsync(async () => {
     const detail = await api.tasting(id)
@@ -152,6 +209,7 @@ export default function TastingPage() {
           )}
           <div className="px-1 text-xs leading-normal text-muted">Private Bewertungen erscheinen hier nicht.</div>
           <Link to="/abzeichen" className="flex h-12 items-center justify-center rounded-full border-2 border-line bg-card text-[15px] font-bold text-ink no-underline">Meine Abzeichen ansehen</Link>
+          {isHost && <DeleteTasting tastingId={tasting.id} revealed onDone={() => navigate('/freunde', { replace: true })} />}
         </div>
       </Page>
     )
@@ -235,6 +293,7 @@ export default function TastingPage() {
         ) : (
           <div className="px-1 text-center text-[13px] text-muted">{tasting.hostName} löst den Abend am Ende auf.</div>
         )}
+        {isHost && <DeleteTasting tastingId={tasting.id} revealed={false} onDone={() => navigate('/freunde', { replace: true })} />}
       </div>
     </Page>
   )

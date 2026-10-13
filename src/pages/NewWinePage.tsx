@@ -274,7 +274,7 @@ export default function NewWinePage() {
                 { value: 4, label: '€€€€' },
               ]}
             />
-            <div className="text-xs text-muted">€ bis 10 € · €€ bis 25 € · €€€ bis 50 € · €€€€ darüber (Ladenpreis)</div>
+            <div className="text-xs text-muted">€ bis 5 € · €€ bis 10 € · €€€ bis 15 € · €€€€ über 15 € (Ladenpreis)</div>
           </div>
         </Card>
 
