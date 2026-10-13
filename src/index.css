@@ -24,6 +24,8 @@
     background: var(--color-page);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    /* Plus Jakarta Sans verschmilzt „fi" zu einer Ligatur ohne i-Punkt („Profil") */
+    font-variant-ligatures: no-common-ligatures;
     -webkit-tap-highlight-color: transparent;
   }
 
