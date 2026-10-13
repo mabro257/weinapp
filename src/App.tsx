@@ -20,6 +20,7 @@ import TastingNewPage from './pages/TastingNewPage'
 import TastingPage from './pages/TastingPage'
 import GrapePage from './pages/GrapePage'
 import HistoryPage from './pages/HistoryPage'
+import DuplicatesPage from './pages/DuplicatesPage'
 
 interface AppState {
   profile: Profile
@@ -76,6 +77,8 @@ export default function App() {
           <Route path="/wein/neu" element={<NewWinePage />} />
           <Route path="/wein/:id" element={<WinePage />} />
           <Route path="/wein/:id/bewerten" element={<RatePage />} />
+          <Route path="/wein/:id/bearbeiten" element={<NewWinePage />} />
+          <Route path="/dubletten" element={<DuplicatesPage />} />
           <Route path="/decider" element={<DeciderPage />} />
           <Route path="/geschmack" element={<TastePage />} />
           <Route path="/freunde" element={<FriendsPage />} />
