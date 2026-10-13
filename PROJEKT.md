@@ -141,6 +141,19 @@ Getestet: 11 gegen Postgres (PGlite), auch zweimal hintereinander, zusammen mit 
 
 Getestet: 12 gegen Postgres (PGlite), auch zweimal hintereinander. Geprüft wurden die Teilnehmerregeln, verdeckte Weine, Bewerten nur sichtbarer Weine und nur während der Abend läuft, Preisklasse nachtragen und Empfehlung ablehnen. Dabei wurde ein Fehler gefunden und behoben: Der Gastgeber konnte einen neuen Abend nicht anlegen. Dazu Typecheck, Build und im Demo-Modus Einladungslink, Weinabend, Preisklasse, Preis-Leistung, Matrix und „Ich". Nicht getestet: die Sicht eines Teilnehmers in der App (im Demo-Modus bist du immer Gastgeber).
 
+## Update 8 (13.10.2026)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Weinabend-Datum | Gastgeber kann das Datum nachträglich ändern („Datum ändern" unter dem Titel). |
+| Bewertung im Weinabend | Ist ein Wein schon bewertet, öffnet ein Klick die bestehende Bewertung zum Ändern („Bewertung ändern"), statt eine zweite anzulegen. |
+| Reiter „Ich" | Ganz oben die Kachel „Meine Bewertungen" (Anzahl, Ø Note, Rebsorten). Dahinter eigene Seite `/ich/bewertungen` mit Suche und Filtern nach Ort/Anlass als umbrechende Auswahl (erste 8, „Alle anzeigen"), nicht mehr seitlich scrollend. |
+| Login | Hinweis auf den Spam-Ordner schon vor dem Anfordern und nach dem Versand. Überschrift „WineWithFriends". |
+| Geschmacksmatrix | Weiß vorausgewählt, Säure-Achse mit „mild" und „frisch". |
+| Kürzere Texte | Decider: nur Überschrift und eine Frage, kurzer Hinweis im Auswahlfeld. „Geschmack": technische Erklärungen entfernt bzw. auf einen Satz gekürzt. |
+
+Getestet: Typecheck, Build und im Demo-Modus Datum ändern, Bewertung im Weinabend ändern (keine Doppelbewertung), „Ich" und „Meine Bewertungen" samt Filtern, Matrix, Decider und Login.
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.

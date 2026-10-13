@@ -49,7 +49,9 @@ Stand 13.10.2026, App-Name **WineWithFriends** (Titel, Manifest, Login, Einladun
 
 | `12_weinabend_preis.sql` | `tasting_participants` + `is_tasting_participant` (ohne Einträge = ganze Gruppe), `set_tasting_participants`, `tasting_wines.visible` (neu = verdeckt), Bewertungsregel im Abend (restriktive Policy), `set_wine_price` | SQL Editor, nach 11 |
 
-`05` braucht `num_words` aus `09`. Live beim Nutzer: bis Update 6 (11). Geliefert, Upload offen: Update 7 (12, Weinabend-Teilnehmer/verdeckte Weine, Preis-Leistung u. a.). **Am Anfang beim Nutzer nachfragen.**
+`05` braucht `num_words` aus `09`. Live beim Nutzer: bis Update 7 (12). Geliefert, Upload offen: Update 8 (nur App-Dateien, kein SQL). **Am Anfang beim Nutzer nachfragen.**
+
+Texte: Nutzer will **kurze, untechnische Texte** (keine Erklärungen, wie gerechnet wird). Geschmacksmatrix startet mit Weiß.
 
 Weinabend-Begriffe: „Bewertungen aufdecken" (nicht „auflösen"), Status in der DB bleibt `aufgeloest`. Zurück-Buttons nutzen `useBack` in `ui.tsx` (ohne Verlauf → Ausweichseite). Schrift: `font-variant-ligatures: no-common-ligatures`, sonst fehlt in „fi" der i-Punkt.
 
