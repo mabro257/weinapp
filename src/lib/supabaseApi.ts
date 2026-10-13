@@ -390,6 +390,23 @@ export function createSupabaseApi(url: string, key: string): Api {
       })
       fail(error)
     },
+    async updateRating(id, input) {
+      const { error } = await sb
+        .from('ratings')
+        .update({
+          score: input.score,
+          vintage: input.vintage,
+          tasted_on: input.tastedOn,
+          body: input.body,
+          acidity: input.acidity,
+          tannin: input.tannin,
+          note: input.note,
+          tags: input.tags,
+          shared: input.shared,
+        })
+        .eq('id', id)
+      fail(error)
+    },
     async deleteRating(id) {
       const { error } = await sb.from('ratings').delete().eq('id', id)
       fail(error)
@@ -543,6 +560,11 @@ export function createSupabaseApi(url: string, key: string): Api {
       const { error: e2 } = await sb.rpc('set_tasting_participants', { p_tasting: id, p_users: participantIds })
       fail(e2)
       return id
+    },
+    async setTastingDate(tastingId, eventDate) {
+      const { data, error } = await sb.from('tastings').update({ event_date: eventDate }).eq('id', tastingId).select('id')
+      fail(error)
+      if (!data?.length) throw new Error('Nur der Gastgeber kann das Datum ändern.')
     },
     async setTastingParticipants(tastingId, userIds) {
       const { error } = await sb.rpc('set_tasting_participants', { p_tasting: tastingId, p_users: userIds })

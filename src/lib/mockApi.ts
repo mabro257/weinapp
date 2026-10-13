@@ -273,6 +273,13 @@ export function createMockApi(): Api {
       save()
       await wait(null)
     },
+    async updateRating(id, input) {
+      store.ratings = store.ratings.map((r) =>
+        r.id === id && r.userId === DEMO_ME.id ? { ...r, ...input, wineId: r.wineId, tastingId: r.tastingId } : r,
+      )
+      save()
+      await wait(null)
+    },
     async deleteRating(id) {
       store.ratings = store.ratings.filter((r) => !(r.id === id && r.userId === DEMO_ME.id))
       save()

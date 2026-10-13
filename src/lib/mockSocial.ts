@@ -46,7 +46,7 @@ type Social = Pick<
   Api,
   | 'myGroups' | 'groupMembers' | 'createGroup' | 'joinGroup' | 'leaveGroup' | 'friends' | 'friendRatings'
   | 'recommendations' | 'recommend' | 'markRecommendationsSeen' | 'deleteRecommendation'
-  | 'tastings' | 'tasting' | 'createTasting' | 'setTastingParticipants' | 'setTastingWineVisible' | 'addTastingWine' | 'removeTastingWine' | 'revealTasting' | 'deleteTasting' | 'tastingRatings'
+  | 'tastings' | 'tasting' | 'createTasting' | 'setTastingDate' | 'setTastingParticipants' | 'setTastingWineVisible' | 'addTastingWine' | 'removeTastingWine' | 'revealTasting' | 'deleteTasting' | 'tastingRatings'
 >
 
 export function createSocialMock(ctx: Ctx): Social {
@@ -157,6 +157,12 @@ export function createSocialMock(ctx: Ctx): Social {
       })
       ctx.save()
       return ctx.wait(id)
+    },
+    async setTastingDate(tastingId, eventDate) {
+      const t = s().tastings.find((x) => x.id === tastingId)
+      if (t && t.host === DEMO_ME.id) t.date = eventDate
+      ctx.save()
+      await ctx.wait(null)
     },
     async setTastingParticipants(tastingId, userIds) {
       const t = s().tastings.find((x) => x.id === tastingId)

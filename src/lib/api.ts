@@ -68,6 +68,8 @@ export interface Api {
   myRatings(): Promise<RatingWithWine[]>
   myTags(): Promise<string[]>
   createRating(input: NewRating): Promise<void>
+  /** eigene Bewertung ändern (Wein und Weinabend bleiben) */
+  updateRating(id: number, input: NewRating): Promise<void>
   deleteRating(id: number): Promise<void>
   setRatingShared(id: number, shared: boolean): Promise<void>
 
@@ -93,6 +95,8 @@ export interface Api {
   /** progress enthält nur die Teilnehmer des Abends */
   tasting(id: number): Promise<{ tasting: Tasting; wines: TastingWine[]; progress: TastingProgress[] } | null>
   createTasting(groupId: number, title: string, eventDate: string, participantIds: string[]): Promise<number>
+  /** Gastgeber: Datum verschieben */
+  setTastingDate(tastingId: number, eventDate: string): Promise<void>
   /** Gastgeber: wer aus der Gruppe dabei ist (Gastgeber immer) */
   setTastingParticipants(tastingId: number, userIds: string[]): Promise<void>
   addTastingWine(tastingId: number, wineId: number): Promise<void>
