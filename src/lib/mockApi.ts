@@ -71,6 +71,7 @@ export function createMockApi(): Api {
       wineBody: wine?.body ?? null,
       wineAcidity: wine?.acidity ?? null,
       wineType: wine?.type ?? null,
+      winePriceClass: wine?.priceClass ?? null,
     }
   }
 
@@ -153,6 +154,11 @@ export function createMockApi(): Api {
     },
     async updateWine(id, input) {
       store.wines = store.wines.map((w) => (w.id === id ? { ...w, ...input } : w))
+      save()
+      await wait(null)
+    },
+    async setWinePrice(id, priceClass) {
+      store.wines = store.wines.map((w) => (w.id === id ? { ...w, priceClass } : w))
       save()
       await wait(null)
     },

@@ -91,6 +91,7 @@ export interface RatingWithWine extends Rating {
   wineBody: number | null
   wineAcidity: number | null
   wineType: WineType | null
+  winePriceClass: number | null
 }
 
 export interface CommunityStats {
@@ -188,6 +189,11 @@ export interface Tasting {
   hostId: string
   hostName: string
   status: 'offen' | 'aufgeloest'
+}
+
+/** Wein eines Weinabends; verdeckte Weine sieht nur der Gastgeber */
+export interface TastingWine extends WineHit {
+  visible: boolean
 }
 
 export interface TastingProgress {

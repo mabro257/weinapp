@@ -67,6 +67,19 @@ export function tasteWord(key: TasteKey, v: number | null): string {
 }
 
 export const PRICE_LABEL = ['', '€', '€€', '€€€', '€€€€']
+/** Ladenpreis je Preisklasse */
+export const PRICE_RANGE = ['', 'bis 5 €', '5 bis 10 €', '10 bis 15 €', 'über 15 €']
+
+/** Zeitpunkt eines laufenden Weinabends: „Heute“, „Morgen“, „Noch 3 Tage“, danach „Läuft“ */
+export function tastingWhen(eventDate: string): string {
+  const [y, m, d] = eventDate.split('-').map(Number)
+  const t = new Date()
+  const days = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())) / 86400000)
+  if (days > 1) return `Noch ${days} Tage`
+  if (days === 1) return 'Morgen'
+  if (days === 0) return 'Heute'
+  return 'Läuft'
+}
 
 /** Erklärungen für das Fragezeichen bei der Bewertung */
 export interface HelpText {

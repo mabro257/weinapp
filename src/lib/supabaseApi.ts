@@ -11,6 +11,7 @@ import type {
   Recommendation,
   SavedWine,
   Tasting,
+  TastingWine,
   Wine,
   WineHit,
   WineType,
@@ -50,7 +51,7 @@ export function createSupabaseApi(url: string, key: string): Api {
   })
 
   const RATING_COLS =
-    'id, wine_id, score, vintage, tasted_on, body, acidity, tannin, note, tags, shared, tasting_id, wines(name, winery, region, country, type, body, acidity, wine_grapes(grape_id, position))'
+    'id, wine_id, score, vintage, tasted_on, body, acidity, tannin, note, tags, shared, tasting_id, wines(name, winery, region, country, type, body, acidity, price_class, wine_grapes(grape_id, position))'
   const WINE_COLS = 'id, name, winery, region, type, label_path, wine_grapes(position, grapes(name))'
 
   const toRating = (r: Record<string, any>): RatingWithWine => {
@@ -77,6 +78,7 @@ export function createSupabaseApi(url: string, key: string): Api {
       wineBody: num(wine.body),
       wineAcidity: num(wine.acidity),
       wineType: (wine.type as WineType) ?? null,
+      winePriceClass: num(wine.price_class),
     }
   }
 
@@ -231,6 +233,10 @@ export function createSupabaseApi(url: string, key: string): Api {
       const { error: e2 } = await sb.from('wine_grapes').delete().eq('wine_id', id)
       fail(e2)
       await saveGrapes(id, input.grapeIds)
+    },
+    async setWinePrice(id, priceClass) {
+      const { error } = await sb.rpc('set_wine_price', { p_wine: id, p_class: priceClass })
+      fail(error)
     },
     async duplicateCandidates() {
       const { data, error } = await sb.rpc('duplicate_candidates')
@@ -485,6 +491,10 @@ export function createSupabaseApi(url: string, key: string): Api {
         .insert(toUserIds.map((u) => ({ to_user: u, wine_id: wineId, message: message?.trim() || null })))
       fail(error)
     },
+    async deleteRecommendation(id) {
+      const { error } = await sb.from('recommendations').delete().eq('id', id)
+      fail(error)
+    },
     async markRecommendationsSeen() {
       const id = await userId()
       const { error } = await sb.from('recommendations').update({ seen: true }).eq('to_user', id).eq('seen', false)
@@ -505,7 +515,7 @@ export function createSupabaseApi(url: string, key: string): Api {
     async tasting(id) {
       const { data, error } = await sb
         .from('tastings')
-        .select(`id, group_id, title, event_date, host, status, groups(name), host_profile:profiles!tastings_host_fkey(display_name), tasting_wines(position, wines(${WINE_COLS}))`)
+        .select(`id, group_id, title, event_date, host, status, groups(name), host_profile:profiles!tastings_host_fkey(display_name), tasting_wines(position, visible, wines(${WINE_COLS}))`)
         .eq('id', id)
         .maybeSingle()
       fail(error)
@@ -515,21 +525,32 @@ export function createSupabaseApi(url: string, key: string): Api {
       const wines = (((data as Record<string, any>).tasting_wines ?? []) as Record<string, any>[])
         .filter((tw) => tw.wines)
         .sort((a, b) => a.position - b.position)
-        .map((tw) => wineToHit(tw.wines))
+        .map((tw): TastingWine => ({ ...wineToHit(tw.wines), visible: tw.visible !== false }))
       return {
         tasting: toTasting(data as Record<string, any>),
         wines,
         progress: ((prog ?? []) as Record<string, any>[]).map((p) => ({ userId: p.user_id, displayName: p.display_name, rated: Number(p.rated) })),
       }
     },
-    async createTasting(groupId, title, eventDate) {
+    async createTasting(groupId, title, eventDate, participantIds) {
       const { data, error } = await sb
         .from('tastings')
         .insert({ group_id: groupId, title: title.trim(), event_date: eventDate })
         .select('id')
         .single()
       fail(error)
-      return Number(data!.id)
+      const id = Number(data!.id)
+      const { error: e2 } = await sb.rpc('set_tasting_participants', { p_tasting: id, p_users: participantIds })
+      fail(e2)
+      return id
+    },
+    async setTastingParticipants(tastingId, userIds) {
+      const { error } = await sb.rpc('set_tasting_participants', { p_tasting: tastingId, p_users: userIds })
+      fail(error)
+    },
+    async setTastingWineVisible(tastingId, wineId, visible) {
+      const { error } = await sb.from('tasting_wines').update({ visible }).eq('tasting_id', tastingId).eq('wine_id', wineId)
+      fail(error)
     },
     async addTastingWine(tastingId, wineId) {
       const { count } = await sb.from('tasting_wines').select('wine_id', { count: 'exact', head: true }).eq('tasting_id', tastingId)

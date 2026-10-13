@@ -8,6 +8,7 @@ import type {
   Recommendation,
   Tasting,
   TastingProgress,
+  TastingWine,
   Grape,
   GrapeCommunity,
   NewRating,
@@ -43,6 +44,8 @@ export interface Api {
   createWine(input: NewWine): Promise<number>
   /** Admin oder Ersteller (solange ungeprüft): Stammdaten korrigieren */
   updateWine(id: number, input: NewWine): Promise<void>
+  /** Preisklasse nachtragen (1–4); jeder, solange keine hinterlegt ist */
+  setWinePrice(id: number, priceClass: number): Promise<void>
   uploadLabel(wineId: number, file: Blob): Promise<void>
   wineCommunity(wineId: number): Promise<CommunityStats[]>
 
@@ -82,13 +85,20 @@ export interface Api {
   recommendations(): Promise<Recommendation[]>
   recommend(wineId: number, toUserIds: string[], message: string | null): Promise<void>
   markRecommendationsSeen(): Promise<void>
+  /** erhaltene Empfehlung ablehnen bzw. entfernen */
+  deleteRecommendation(id: number): Promise<void>
 
   // Weinabende
   tastings(): Promise<Tasting[]>
-  tasting(id: number): Promise<{ tasting: Tasting; wines: WineHit[]; progress: TastingProgress[] } | null>
-  createTasting(groupId: number, title: string, eventDate: string): Promise<number>
+  /** progress enthält nur die Teilnehmer des Abends */
+  tasting(id: number): Promise<{ tasting: Tasting; wines: TastingWine[]; progress: TastingProgress[] } | null>
+  createTasting(groupId: number, title: string, eventDate: string, participantIds: string[]): Promise<number>
+  /** Gastgeber: wer aus der Gruppe dabei ist (Gastgeber immer) */
+  setTastingParticipants(tastingId: number, userIds: string[]): Promise<void>
   addTastingWine(tastingId: number, wineId: number): Promise<void>
   removeTastingWine(tastingId: number, wineId: number): Promise<void>
+  /** Gastgeber: Wein für die Teilnehmer sichtbar schalten bzw. wieder verdecken */
+  setTastingWineVisible(tastingId: number, wineId: number, visible: boolean): Promise<void>
   revealTasting(tastingId: number): Promise<void>
   /** Gastgeber: Weinabend löschen; mit deleteRatings werden alle Bewertungen des Abends für alle gelöscht. Liefert die Zahl gelöschter Bewertungen. */
   deleteTasting(tastingId: number, deleteRatings: boolean): Promise<number>

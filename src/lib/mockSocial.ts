@@ -1,12 +1,18 @@
 import type { Api } from './api'
-import type { FriendRating, Group, RatingWithWine, Recommendation, Tasting, Wine, WineHit } from './types'
+import type { FriendRating, Group, RatingWithWine, Recommendation, Tasting, TastingWine, Wine, WineHit } from './types'
 import { DEMO_FRIENDS, DEMO_ME, type DemoRating } from './demoData'
 
 /** Soziale Daten im Demo-Modus */
 export interface SocialStore {
   groups: { id: number; name: string; code: string; members: { userId: string; role: 'admin' | 'member' }[] }[]
   recs: { id: number; from: string; to: string; wineId: number; message: string | null; seen: boolean; at: string }[]
-  tastings: { id: number; groupId: number; title: string; date: string; host: string; status: 'offen' | 'aufgeloest'; wineIds: number[] }[]
+  tastings: {
+    id: number; groupId: number; title: string; date: string; host: string; status: 'offen' | 'aufgeloest'; wineIds: number[]
+    /** Teilnehmer; fehlt = ganze Gruppe */
+    participants?: string[]
+    /** sichtbar geschaltete Weine; fehlt = alle sichtbar (ältere Abende) */
+    visibleIds?: number[]
+  }[]
 }
 
 export function initialSocial(): SocialStore {
@@ -39,8 +45,8 @@ const nameOf = (id: string) => (id === DEMO_ME.id ? DEMO_ME.displayName : DEMO_F
 type Social = Pick<
   Api,
   | 'myGroups' | 'groupMembers' | 'createGroup' | 'joinGroup' | 'leaveGroup' | 'friends' | 'friendRatings'
-  | 'recommendations' | 'recommend' | 'markRecommendationsSeen'
-  | 'tastings' | 'tasting' | 'createTasting' | 'addTastingWine' | 'removeTastingWine' | 'revealTasting' | 'deleteTasting' | 'tastingRatings'
+  | 'recommendations' | 'recommend' | 'markRecommendationsSeen' | 'deleteRecommendation'
+  | 'tastings' | 'tasting' | 'createTasting' | 'setTastingParticipants' | 'setTastingWineVisible' | 'addTastingWine' | 'removeTastingWine' | 'revealTasting' | 'deleteTasting' | 'tastingRatings'
 >
 
 export function createSocialMock(ctx: Ctx): Social {
@@ -111,6 +117,11 @@ export function createSocialMock(ctx: Ctx): Social {
       ctx.save()
       await ctx.wait(null)
     },
+    async deleteRecommendation(id) {
+      s().recs = s().recs.filter((r) => r.id !== id)
+      ctx.save()
+      await ctx.wait(null)
+    },
     async markRecommendationsSeen() {
       for (const r of s().recs) if (r.to === DEMO_ME.id) r.seen = true
       ctx.save()
@@ -125,22 +136,42 @@ export function createSocialMock(ctx: Ctx): Social {
       const t = s().tastings.find((x) => x.id === id)
       if (!t) return ctx.wait(null)
       const g = s().groups.find((x) => x.id === t.groupId)
-      const wines = t.wineIds.flatMap((wid) => {
+      // Demo: du bist immer Gastgeber und siehst deshalb auch verdeckte Weine
+      const wines = t.wineIds.flatMap((wid): TastingWine[] => {
         const w = ctx.get().wines.find((x) => x.id === wid)
-        return w ? [ctx.toHit(w)] : []
+        return w ? [{ ...ctx.toHit(w), visible: !t.visibleIds || t.visibleIds.includes(wid) || t.status !== 'offen' }] : []
       })
-      const progress = (g?.members ?? []).map((m) => ({
+      const members = (g?.members ?? []).filter((m) => !t.participants || t.participants.includes(m.userId) || m.userId === t.host)
+      const progress = members.map((m) => ({
         userId: m.userId,
         displayName: nameOf(m.userId),
         rated: new Set(ctx.get().ratings.filter((r) => r.tastingId === id && r.userId === m.userId).map((r) => r.wineId)).size,
       }))
       return ctx.wait({ tasting: toTasting(t), wines, progress })
     },
-    async createTasting(groupId, title, eventDate) {
+    async createTasting(groupId, title, eventDate, participantIds) {
       const id = Math.max(0, ...s().tastings.map((t) => t.id)) + 1
-      s().tastings.push({ id, groupId, title: title.trim(), date: eventDate, host: DEMO_ME.id, status: 'offen', wineIds: [] })
+      s().tastings.push({
+        id, groupId, title: title.trim(), date: eventDate, host: DEMO_ME.id, status: 'offen', wineIds: [],
+        participants: [...new Set([DEMO_ME.id, ...participantIds])], visibleIds: [],
+      })
       ctx.save()
       return ctx.wait(id)
+    },
+    async setTastingParticipants(tastingId, userIds) {
+      const t = s().tastings.find((x) => x.id === tastingId)
+      if (t && t.host === DEMO_ME.id) t.participants = [...new Set([DEMO_ME.id, ...userIds])]
+      ctx.save()
+      await ctx.wait(null)
+    },
+    async setTastingWineVisible(tastingId, wineId, visible) {
+      const t = s().tastings.find((x) => x.id === tastingId)
+      if (t && t.host === DEMO_ME.id) {
+        const cur = t.visibleIds ?? [...t.wineIds]
+        t.visibleIds = visible ? [...new Set([...cur, wineId])] : cur.filter((w) => w !== wineId)
+      }
+      ctx.save()
+      await ctx.wait(null)
     },
     async addTastingWine(tastingId, wineId) {
       const t = s().tastings.find((x) => x.id === tastingId)

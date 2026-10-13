@@ -101,6 +101,41 @@ export function matrix(mine: RatingWithWine[], grapes: Grape[], color: 'rot' | '
   return rows
 }
 
+export interface PriceValue {
+  /** je Preisklasse 1–4: Anzahl Weine und Durchschnittsnote (Ø je Wein) */
+  classes: { cls: number; wines: number; avg: number | null }[]
+  /** günstige Weine (bis 10 €), die dir am besten gefallen */
+  bargains: { wineId: number; name: string; winery: string | null; avg: number; cls: number }[]
+  /** Punkte, die Weine ab 10 € im Schnitt besser abschneiden als Weine bis 10 € (null = zu wenig Daten) */
+  premium: number | null
+  /** bewertete Weine ohne Preisklasse */
+  withoutPrice: number
+}
+
+/** Preis-Leistung: wie gut gefallen dir Weine je Preisklasse, und welche günstigen Weine lohnen sich */
+export function priceValue(mine: RatingWithWine[]): PriceValue {
+  const m = new Map<number, { wineId: number; name: string; winery: string | null; cls: number | null; scores: number[] }>()
+  for (const r of mine) {
+    const cur = m.get(r.wineId) ?? { wineId: r.wineId, name: r.wineName, winery: r.winery, cls: r.winePriceClass, scores: [] }
+    cur.scores.push(r.score)
+    m.set(r.wineId, cur)
+  }
+  const wines = [...m.values()].map((w) => ({ ...w, avg: mean(w.scores)! }))
+  const priced = wines.filter((w) => w.cls !== null) as (typeof wines[number] & { cls: number })[]
+  const classes = [1, 2, 3, 4].map((cls) => {
+    const xs = priced.filter((w) => w.cls === cls).map((w) => w.avg)
+    return { cls, wines: xs.length, avg: mean(xs) }
+  })
+  const cheap = priced.filter((w) => w.cls <= 2)
+  const dear = priced.filter((w) => w.cls >= 3)
+  const premium = cheap.length >= 2 && dear.length >= 2 ? mean(dear.map((w) => w.avg))! - mean(cheap.map((w) => w.avg))! : null
+  const bargains = [...cheap]
+    .sort((a, b) => b.avg - a.avg || a.cls - b.cls)
+    .slice(0, 3)
+    .map((w) => ({ wineId: w.wineId, name: w.name, winery: w.winery, avg: w.avg, cls: w.cls }))
+  return { classes, bargains, premium, withoutPrice: wines.length - priced.length }
+}
+
 /** Eigene Lieblingsweine: Durchschnitt je Wein über alle Verkostungen, unabhängig von Zeitpunkt und Rebsorte */
 export function topWines(mine: RatingWithWine[], limit = 5) {
   const m = new Map<number, { wineId: number; name: string; winery: string | null; scores: number[] }>()
