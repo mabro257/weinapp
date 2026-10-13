@@ -15,6 +15,7 @@ Stand 10.10.2026. Alles läuft im Browser, du musst nichts installieren.
 9. [Update vom 12.10.2026](#teil-9--update-vom-12102026-geschmack-merkliste-open-food-facts)
 10. [Update „Sozial"](#teil-10--update-sozial-gruppen-weinabend-empfehlen-zwilling-abzeichen)
 11. [Update 4: WineWithFriends, Etikett-Kamera, Zahlen-Suche](#teil-11--update-4-winewithfriends-etikett-kamera-zahlen-suche)
+12. [Update 5: Namensregel, Dubletten, Geschmack, Hilfe](#teil-12--update-5-namensregel-dubletten-geschmack-hilfe)
 
 Nach Teil 2 läuft die App schon online mit Beispieldaten. Du kannst sie testen, bevor die Datenbank steht.
 
@@ -265,6 +266,20 @@ Gut zu wissen:
    - Supabase → **Authentication** → **Emails**: in **Confirm signup** und **Magic Link** den Betreff auf `Dein Anmeldecode für WineWithFriends` ändern → **Save**.
    - Supabase → **Authentication** → **Emails** → **SMTP Settings**: **Sender name** `WineWithFriends` → **Save**.
 6. Am Handy die App schließen und neu öffnen. Der Name auf dem Home-Bildschirm ändert sich erst, wenn du die App einmal löschst und neu zum Home-Bildschirm hinzufügst (iPhone). Beim ersten Foto fragt die App nach dem Kamerazugriff: **Erlauben**.
+
+---
+
+## Teil 12 · Update 5: Namensregel, Dubletten, Geschmack, Hilfe
+
+1. Netlify: **Stop builds**.
+2. Auf GitHub die Ordner aus `weinapp-update-5.zip` hochladen (Tabelle in der Nachricht von Claude).
+3. Supabase → **SQL Editor** → **New query**: Inhalt von `10a_katalog_daten.sql` einfügen → **Run**. Die Datei ist groß (rund 180 KB): am besten im Windows-Editor öffnen, **Strg + A**, **Strg + C**, im SQL Editor **Strg + V**. Ergebnis: `umbenennungen 1842`, `dubletten 283`.
+4. Neue Query: Inhalt von `10b_namen_dubletten.sql` → **Run**. Fragt Supabase nach RLS, **Run and enable RLS** wählen. Ergebnis: `lugana_zusammengefuehrt true`.
+5. Netlify: **Activate builds** → **Deploys** → **Trigger deploy** → **Deploy project**.
+6. App am Handy schließen und neu öffnen.
+7. Unter **Ich** → **Dubletten prüfen** (nur für Admins sichtbar) die vorgeschlagenen Paare durchgehen: **Links behalten** bzw. **Rechts behalten** führt zusammen, **Kein Duplikat** blendet das Paar dauerhaft aus. Behalte möglichst den Katalogeintrag.
+
+So legst du ab jetzt Weine an: **Name** wie auf dem Etikett, aber ohne Weingut und ohne Jahrgang. **Weingut** ins eigene Feld, **Jahrgang** bei der Bewertung. Die App weist dich auf Abweichungen hin und schlägt eine Korrektur vor.
 
 ---
 

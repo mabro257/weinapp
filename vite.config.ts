@@ -13,7 +13,7 @@ export default defineConfig({
       manifest: {
         name: 'WineWithFriends',
         short_name: 'WineWithFriends',
-        description: 'Weine bewerten, Verkostungen mit Freunden festhalten, im Restaurant entscheiden.',
+        description: 'Weine bewerten, Verkostungen mit Freunden festhalten, den passenden Wein finden.',
         lang: 'de',
         start_url: '/',
         display: 'standalone',

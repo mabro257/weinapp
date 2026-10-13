@@ -98,6 +98,22 @@ Getestet gegen Postgres (PGlite): Fremde sehen nichts, private Bewertungen bleib
 
 Getestet: `09` gegen Postgres (PGlite) inkl. zweitem Lauf und erneutem `06`, Suche „3/drei/iii freunde", „3 Talente", „No. 1"; Typecheck, Build; Kamera im Demo-Modus mit simulierter Kamera (Zuschnitt stimmt mit dem Rahmen überein), Meldung ohne Kamerazugriff. Nicht getestet: echte Handykamera.
 
+## Update 5 (13.10.2026)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Namensregel | **Name = Name des Weins vom Etikett, ohne Weingut und ohne Jahrgang.** Weingut, Rebsorten, Region und Jahrgang (in der Bewertung) stehen in eigenen Feldern. Steht nur die Rebsorte drauf, ist sie der Name. |
+| Neuanlage | Hinweisbox mit Regel und Beispiel, Live-Prüfung des Namens (Jahrgang, Weingut im Namen, Großbuchstaben) mit einem Korrekturvorschlag, Vorschau „So erscheint der Wein", Rückfrage bei fehlendem Weingut, „Gibt es schon?" unabhängig von Wortreihenfolge. |
+| Katalog bereinigt | Open Food Facts: 1.842 Namen nach der Regel korrigiert, 283 Dubletten (zu X-Wines oder untereinander) zusammengeführt, z. B. „Lugana - I Frati" (Ca del Frati) → „I Frati Lugana" (Cà dei Frati). |
+| Dubletten | Zusammenführen zieht alles um (Bewertungen, Merkliste, Weinabende, Empfehlungen, Etikett, Rebsorten). Admin-Seite „Dubletten prüfen" unter „Ich" für selbst angelegte und bewertete Weine; „Kein Duplikat" merkt sich die Entscheidung. Ähnlichkeit: Weinname ohne Weingut-Wörter 70 %, Weingut 30 %, Dublette ab 0,8. |
+| Bearbeiten | „Angaben zum Wein korrigieren" auf der Weinseite für Admin und für den Ersteller, solange der Wein ungeprüft ist. |
+| Geschmacksmatrix | Weine werden neutral eingeordnet: Körper und Säure aus dem Katalog, sonst die Tendenz der Hauptrebsorte, nie die eigene Angabe. Gilt auch für „Dein Profil" und den „Sweet Spot". Feld antippen zeigt die eigenen Weine dort. |
+| Meine Top 5 | Unter „Geschmack": Durchschnitt je Wein über alle Verkostungen, unabhängig von Zeitpunkt und Rebsorte. |
+| Hilfe bei der Bewertung | Fragezeichen bei Gesamtnote, Körper, Säure und Tannin öffnen eine Erklärung: was es ist, woran man es erkennt, Beispiele für niedrig und hoch. |
+| Decider | Allgemein formuliert („Unsicher zwischen mehreren Weinen?"), Beispiele Restaurant, Supermarkt, Weinhändler, Geschenk. Modus „Für mehrere" statt „Für den Tisch". Nicht mehr auf der Startseite, nur in der Navigation. |
+
+Getestet: 10a/10b gegen Postgres (PGlite), auch zweimal hintereinander. Geprüft wurden die Zusammenführung inklusive Merkliste, Weinabend und Empfehlung, die Zugriffsregeln (nur Admin), dass Rosso und Brunello vom selben Weingut keine Dublette sind, dass Tippfehler beim Anlegen trotzdem gefunden werden, und der Katalog-Import mit den bereinigten Daten. Dazu Typecheck, Build und alle neuen Ansichten im Demo-Modus.
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.
