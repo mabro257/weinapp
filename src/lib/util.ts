@@ -34,8 +34,23 @@ export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
   return { data, error, loading, reload }
 }
 
+/** Vorschau-Adresse für ein Foto, wird beim Wechsel wieder freigegeben. */
+export function useObjectUrl(blob: Blob | null): string | null {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!blob) {
+      setUrl(null)
+      return
+    }
+    const u = URL.createObjectURL(blob)
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [blob])
+  return url
+}
+
 /** Verkleinert ein Foto im Browser auf max. 800 px Breite und speichert es als WebP. */
-export async function resizeImage(file: File, maxWidth = 800): Promise<Blob> {
+export async function resizeImage(file: Blob, maxWidth = 800): Promise<Blob> {
   const bitmap = await createImageBitmap(file)
   const scale = Math.min(1, maxWidth / bitmap.width)
   const canvas = document.createElement('canvas')

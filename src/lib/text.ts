@@ -3,6 +3,26 @@ export function normalize(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
 }
 
+const NUMBERS: Record<string, string> = {
+  1: 'eins', 2: 'zwei', 3: 'drei', 4: 'vier', 5: 'funf', 6: 'sechs', 7: 'sieben', 8: 'acht', 9: 'neun', 10: 'zehn', 11: 'elf', 12: 'zwolf',
+}
+const ROMAN: Record<string, string> = {
+  ii: 'zwei', iii: 'drei', iv: 'vier', vi: 'sechs', vii: 'sieben', viii: 'acht', ix: 'neun', xi: 'elf', xii: 'zwolf',
+}
+
+/** Wie `num_words` in der Datenbank: hinter Ziffer 1–12 bzw. römischer Zahl steht das Zahlwort („iii freunde“ → „iii drei freunde“). */
+export function numWords(normalized: string): string {
+  return normalized.replace(/(?<![\p{L}\p{N}_])([0-9]+|[ivx]+)(?![\p{L}\p{N}_])/gu, (m) => {
+    const w = NUMBERS[m] ?? ROMAN[m]
+    return w ? `${m} ${w}` : m
+  })
+}
+
+/** Suchwörter wie in `search_wines`: Ziffern 1–12 werden zum Zahlwort („3 freunde“ → „drei freunde“). */
+export function searchTokens(query: string): string[] {
+  return normalize(query).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(Boolean).map((t) => NUMBERS[t] ?? t)
+}
+
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
 const MONTHS_LONG = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
 

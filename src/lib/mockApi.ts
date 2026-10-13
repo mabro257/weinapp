@@ -2,7 +2,7 @@ import type { Api } from './api'
 import type { CommunityStats, Grape, NewRating, NewWine, RatingWithWine, SavedWine, Wine, WineHit } from './types'
 import { GRAPES } from './grapesData'
 import { DEMO_ME, DEMO_WINES, buildDemoRatings, type DemoRating } from './demoData'
-import { normalize } from './text'
+import { normalize, numWords, searchTokens } from './text'
 import { createSocialMock, initialSocial, type SocialStore } from './mockSocial'
 
 /**
@@ -71,11 +71,11 @@ export function createMockApi(): Api {
   }
 
   const haystack = (wine: Wine) =>
-    normalize([wine.name, wine.winery, wine.region, wine.country,
+    numWords(normalize([wine.name, wine.winery, wine.region, wine.country,
       ...wine.grapeIds.flatMap((id) => {
         const g = GRAPES.find((x) => x.id === id)
         return g ? [g.name, ...g.synonyms] : []
-      })].join(' '))
+      })].join(' ')))
 
   return {
     mode: 'demo',
@@ -107,14 +107,14 @@ export function createMockApi(): Api {
     },
 
     async searchWines(query) {
-      const tokens = normalize(query).split(/\s+/).filter(Boolean)
+      const tokens = searchTokens(query)
       if (!tokens.length) return []
       const hits = store.wines.filter((wine) => {
         const hay = haystack(wine)
         return tokens.every((t) => hay.includes(t))
       })
       // Beste Treffer: alle Suchwörter stehen im Weinnamen selbst
-      const inName = (wine: Wine) => tokens.every((t) => normalize(wine.name).includes(t))
+      const inName = (wine: Wine) => tokens.every((t) => numWords(normalize(wine.name)).includes(t))
       hits.sort((a, b) => Number(inName(b)) - Number(inName(a)))
       return wait(hits.slice(0, 20).map((w) => toHit(w, inName(w))))
     },
