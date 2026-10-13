@@ -8,11 +8,18 @@ export const STOP = new Set([
   'de', 'del', 'dei', 'della', 'delle', 'di', 'da', 'du', 'des', 'la', 'le', 'les', 'il', 'lo', 'el', 'los', 'las', 'the', 'and', 'et', 'und', 'y', 'e',
   'doc', 'docg', 'aoc', 'aop', 'igp', 'igt', 'dop', 'do', 'doca', 'qba', 'vdp', 'ac',
   'vin', 'vino', 'vinho', 'wine', 'wein', 'rotwein', 'weisswein', 'rosewein', 'wijn',
+  'trocken', 'dry',
 ])
+
+/** Zahlen als Wort: „III“ = „3“ = „drei“ (seit Update 6, wie public.token_key) */
+const NUM = {
+  1: 'eins', 2: 'zwei', 3: 'drei', 4: 'vier', 5: 'funf', 6: 'sechs', 7: 'sieben', 8: 'acht', 9: 'neun', 10: 'zehn', 11: 'elf', 12: 'zwolf',
+  ii: 'zwei', iii: 'drei', iv: 'vier', vi: 'sechs', vii: 'sieben', viii: 'acht', ix: 'neun', xi: 'elf', xii: 'zwolf',
+}
 
 /** Sortierte, eindeutige Wörter ohne Füllwörter: „Lugana - I Frati / Ca del Frati“ → „ca frati i lugana“ */
 export function tokenKey(s) {
-  return [...new Set(norm(s).split(' ').filter((t) => t && !STOP.has(t)))].sort().join(' ')
+  return [...new Set(norm(s).split(' ').filter((t) => t && !STOP.has(t)).map((t) => NUM[t] ?? t))].sort().join(' ')
 }
 
 const KEEP_UPPER = new Set(['DOC', 'DOCG', 'AOC', 'AOP', 'IGP', 'IGT', 'DOP', 'DO', 'VDP', 'GG', 'QBA', 'USA', 'XO', 'II', 'III', 'IV'])
