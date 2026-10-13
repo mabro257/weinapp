@@ -1,6 +1,6 @@
 import type { Api } from './api'
 import type { CommunityStats, DuplicatePair, Grape, NewRating, NewWine, RatingWithWine, SavedWine, Wine, WineHit } from './types'
-import { wineSimilarity } from './naming'
+import { DUPLICATE_MIN, wineSimilarity } from './naming'
 import { GRAPES } from './grapesData'
 import { DEMO_ME, DEMO_WINES, buildDemoRatings, type DemoRating } from './demoData'
 import { normalize, numWords, searchTokens } from './text'
@@ -172,7 +172,7 @@ export function createMockApi(): Api {
           if (a.type && b.type && a.type !== b.type) continue
           if ((store.dismissed ?? []).includes(`${Math.min(a.id, b.id)}-${Math.max(a.id, b.id)}`)) continue
           const s = wineSimilarity(a.name, a.winery, b.name, b.winery)
-          if (s < 0.8) continue
+          if (s < DUPLICATE_MIN) continue
           const side = (w: Wine) => ({ id: w.id, name: w.name, winery: w.winery, source: w.id > 25 ? 'manuell' : 'import', ratings: rated(w.id) })
           out.push({ a: side(b), b: side(a), score: s })
         }

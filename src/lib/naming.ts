@@ -67,13 +67,18 @@ export function wineSimilarity(aName: string, aWinery: string | null, bName: str
   const minus = (k: string) => words(k).filter((t) => !wt.has(t)).join(' ')
   const na = minus(tokenKey(aName))
   const nb = minus(tokenKey(bName))
-  const wk = (w: string | null) => words(tokenKey(w ?? '')).filter((t) => !WINERY_GENERIC.has(t)).join(' ')
+  const wk = (w: string | null) => words(tokenKey(w ?? '')).filter((t) => t.length > 1 && !WINERY_GENERIC.has(t)).join(' ')
   const wa = wk(aWinery)
   const wb = wk(bWinery)
   const nameSim = na === nb ? 1 : Math.max(dice(na, nb), 0.8 * trigram(na, nb))
   const winSim = !wa || !wb ? 0.5 : Math.max(dice(wa, wb), trigram(wa, wb))
-  return 0.7 * nameSim + 0.3 * winSim
+  const s = 0.7 * nameSim + 0.3 * winSim
+  // Passen beide Weingüter klar nicht zusammen, ist es kein Duplikat
+  return wa && wb && winSim < 0.6 ? Math.min(s, 0.6) : s
 }
+
+/** ab dieser Ähnlichkeit gilt ein Paar als mögliche Dublette (wie duplicate_candidates) */
+export const DUPLICATE_MIN = 0.92
 
 const VINTAGE = /(^|[\s\-–,(])((?:19[5-9]|20[0-3])\d)(?=$|[\s\-–,)])/
 

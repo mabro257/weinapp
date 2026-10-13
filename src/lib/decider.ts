@@ -2,7 +2,7 @@ import type { CommunityStats, Grape, GrapeCommunity, RatingWithWine, Wine } from
 import { mean, quantileInc, summarize } from './stats'
 
 /**
- * Restaurant-Decider: regelbasierter Score.
+ * Decider: regelbasierter Score.
  *
  * Bausteine (jeweils als erwartete Punktzahl auf der 100er-Skala):
  *  - Rebsorte (Gewicht 45 %): deine Bewertungen der Hauptrebsorte
@@ -12,7 +12,6 @@ import { mean, quantileInc, summarize } from './stats'
  * Wenige Bewertungen werden zu deinem Gesamtschnitt hin „gedämpft“ (Shrinkage),
  * damit ein einzelner Ausreißer nicht die Empfehlung bestimmt.
  * Fehlt ein Baustein, werden die übrigen Gewichte hochgerechnet.
- * Der Preis fließt bewusst nicht ein.
  */
 export interface Candidate {
   key: string
@@ -20,7 +19,6 @@ export interface Candidate {
   sub: string
   wine: Wine | null
   grapeId: number | null
-  price: string
 }
 
 export interface DeciderResult {
@@ -30,6 +28,23 @@ export interface DeciderResult {
   score: number
   reasons: string[]
   confidence: 'hoch' | 'mittel' | 'niedrig'
+  /** wichtigster Grund in Satzform, z. B. „du kennst ihn schon und gibst ihm im Schnitt 91“ */
+  driver: string
+}
+
+/** Einordnung der Entscheidung in ein, zwei Sätzen */
+export function explain(results: DeciderResult[]): string {
+  if (results.length < 2) return ''
+  const [top, second] = results
+  const last = results[results.length - 1]
+  const gap = top.score - second.score
+  const parts: string[] = []
+  if (gap >= 5) parts.push(`Klare Sache: ${top.label} passt deutlich besser zu dir als ${second.label}, denn ${top.driver}.`)
+  else if (gap >= 2) parts.push(`${top.label} liegt knapp vor ${second.label}, denn ${top.driver}.`)
+  else parts.push(`Knappe Entscheidung: ${top.label} und ${second.label} passen fast gleich gut. Wähle nach Lust und Laune.`)
+  if (results.length >= 3 && top.score - last.score >= 6) parts.push(`Am wenigsten passt ${last.label}.`)
+  if (top.confidence === 'niedrig') parts.push('Die Einschätzung ist noch unsicher, weil dir dazu eigene Bewertungen fehlen.')
+  return parts.join(' ')
 }
 
 const SHRINK = 3
@@ -63,6 +78,7 @@ export function decide(
     const parts: { w: number; v: number }[] = []
     const reasons: string[] = []
     let evidence = 0
+    let driver = ''
 
     const grapeId = c.wine?.grapeIds[0] ?? c.grapeId
     if (grapeId !== null && grapeId !== undefined) {
@@ -74,20 +90,30 @@ export function decide(
       const name = grapeName(grapeId)
       if (scores.length === 0) {
         reasons.push(`${name}: noch keine eigene Bewertung.`)
-        if (comm && comm.count >= 3) reasons.push(`Deine Gruppen: ${name} im Schnitt ${Math.round(comm.avg)} (${comm.count} Bewertungen).`)
+        if (comm && comm.count >= 3) {
+          reasons.push(`Deine Gruppen: ${name} im Schnitt ${Math.round(comm.avg)} (${comm.count} Bewertungen).`)
+          driver = `${name} kommt in deinen Gruppen gut an (Ø ${Math.round(comm.avg)})`
+        }
       } else {
         const s = summarize(scores)
         if (s.kind === 'box') {
           const spread =
             s.iqr <= 4
-              ? `, sehr konstant (${Math.round(s.q1)} bis ${Math.round(s.q3)})`
+              ? `, sehr verlässlich (${Math.round(s.q1)} bis ${Math.round(s.q3)})`
               : s.iqr >= 7
-                ? `, aber stark schwankend (${s.min} bis ${s.max})`
+                ? `, aber mal so, mal so (${s.min} bis ${s.max})`
                 : ''
-          reasons.push(`${name}: dein Median ${Math.round(s.median)} aus ${s.n} Bewertungen${spread}.`)
+          reasons.push(`${name}: bei dir meist ${Math.round(s.median)} (${s.n} Bewertungen)${spread}.`)
         } else {
           reasons.push(`${name}: erst ${s.n} eigene ${s.n === 1 ? 'Bewertung' : 'Bewertungen'} (Ø ${Math.round(mean(scores)!)}).`)
         }
+        const typical = s.kind === 'box' ? s.median : mean(scores)!
+        driver =
+          typical >= overall + 1
+            ? `${name} gefällt dir meist besser als dein Durchschnitt (typisch ${Math.round(typical)})`
+            : typical <= overall - 2
+              ? `bei ${name} bist du eher kritisch (typisch ${Math.round(typical)}), die anderen liegen aber noch darunter`
+              : `${name} liegt bei dir im soliden Mittelfeld (typisch ${Math.round(typical)})`
       }
     }
 
@@ -98,6 +124,7 @@ export function decide(
         parts.push({ w: W.region, v: shrunk(scores, overall) })
         evidence += scores.length
         reasons.push(`${region}: Ø ${Math.round(mean(scores)!)} aus ${scores.length} ${scores.length === 1 ? 'Bewertung' : 'Bewertungen'}.`)
+        if (!driver && mean(scores)! >= overall) driver = `Weine aus ${region} gefallen dir (Ø ${Math.round(mean(scores)!)})`
       }
     }
 
@@ -117,7 +144,12 @@ export function decide(
     }
 
     const own = c.wine ? mine.filter((r) => r.wineId === c.wine!.id).map((r) => r.score) : []
-    if (own.length) reasons.unshift(`Kennst du schon: deine Ø ${Math.round(mean(own)!)} aus ${own.length}×.`)
+    if (own.length) {
+      reasons.unshift(`Kennst du schon: deine Ø ${Math.round(mean(own)!)} aus ${own.length}×.`)
+      driver = `du kennst ihn schon und gibst ihm im Schnitt ${Math.round(mean(own)!)}`
+    }
+    if (!driver && wc && wc.count > 0) driver = `er kommt in deinen Gruppen gut an (Ø ${Math.round(wc.avg)})`
+    if (!driver) driver = 'er passt am ehesten zu deinem bisherigen Geschmack'
 
     if (!c.wine && grapeId === null) reasons.push('Ohne Rebsorte oder Katalogeintrag kaum einschätzbar.')
     else if (!c.wine) reasons.push('Nur die Rebsorte ist bekannt, daher nur grob einschätzbar.')
@@ -125,7 +157,7 @@ export function decide(
     const totalW = parts.reduce((a, p) => a + p.w, 0)
     const score = totalW ? parts.reduce((a, p) => a + p.w * p.v, 0) / totalW : overall
     const confidence = evidence >= 8 ? 'hoch' : evidence >= 3 ? 'mittel' : 'niedrig'
-    return { key: c.key, label: c.label, sub: c.sub, score: Math.round(score), reasons, confidence }
+    return { key: c.key, label: c.label, sub: c.sub, score: Math.round(score), reasons, confidence, driver }
   })
 
   return results.sort((a, b) => b.score - a.score)
