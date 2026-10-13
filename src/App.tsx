@@ -21,6 +21,7 @@ import TastingPage from './pages/TastingPage'
 import GrapePage from './pages/GrapePage'
 import HistoryPage from './pages/HistoryPage'
 import DuplicatesPage from './pages/DuplicatesPage'
+import RatingsPage from './pages/RatingsPage'
 
 interface AppState {
   profile: Profile
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/rebsorten" element={<GrapesPage />} />
           <Route path="/rebsorten/:id" element={<GrapePage />} />
           <Route path="/ich" element={<HistoryPage />} />
+          <Route path="/ich/bewertungen" element={<RatingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
