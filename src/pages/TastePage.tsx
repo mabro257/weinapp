@@ -21,7 +21,7 @@ function cellColor(avg: number | null, hasGrapes: boolean) {
 export default function TastePage() {
   const { grapes } = useApp()
   const res = useAsync(() => api.myRatings(), [])
-  const [color, setColor] = useState<'rot' | 'weiss'>('rot')
+  const [color, setColor] = useState<'rot' | 'weiss'>('weiss')
   const [selected, setSelected] = useState<string | null>(null)
   const mine = res.data ?? []
 
@@ -55,7 +55,7 @@ export default function TastePage() {
       <div className="flex flex-col gap-4 px-4 pt-5">
         {mine.length < 3 ? (
           <Card>
-            <div className="text-sm leading-normal text-ink-2">Bewerte ein paar Weine, dann entsteht hier dein Geschmacksprofil. Ab etwa 5 Bewertungen wird es aussagekräftig.</div>
+            <div className="text-sm leading-normal text-ink-2">Bewerte ein paar Weine, dann entsteht hier dein Geschmacksprofil.</div>
           </Card>
         ) : (
           <Card className="flex flex-col gap-[18px]">
@@ -64,7 +64,7 @@ export default function TastePage() {
               data.pref[k] === null ? null : <TasteBar key={k} label={TASTE[k].label} word={tasteWord(k, data.pref[k])} mine={data.pref[k]} community={null} />,
             )}
             <div className="text-[13px] leading-normal text-muted">
-              Aus deinen {data.pref.favorites} Lieblingsweinen (ab Note {Math.round(data.pref.threshold)}). Eingeordnet nach den Katalogangaben zum Wein, sonst nach der typischen Tendenz der Rebsorte, nicht nach deinen eigenen Geschmacksangaben.
+              So sind deine Lieblingsweine (ab Note {Math.round(data.pref.threshold)}).
             </div>
             {total > 0 && (
               <div className="flex flex-col gap-1.5">
@@ -140,13 +140,12 @@ export default function TastePage() {
                       <span className="relative h-3 flex-1 rounded-full bg-chip">
                         {c.avg !== null && <span className="absolute inset-y-0 left-0 rounded-full bg-berry" style={{ width: `${Math.max(4, Math.min(100, ((c.avg - 70) / 30) * 100))}%` }} />}
                       </span>
-                      <span className="w-[64px] flex-none text-right text-[13px]">
+                      <span className="flex w-[56px] flex-none flex-col items-end">
                         {c.avg !== null ? <b className="text-[15px] font-extrabold">{Math.round(c.avg)}</b> : <span className="text-muted">–</span>}
-                        <span className="text-muted"> · {c.wines}</span>
+                        <span className="text-[11px] text-muted">{c.wines} {c.wines === 1 ? 'Wein' : 'Weine'}</span>
                       </span>
                     </div>
                   ))}
-                  <div className="text-[11px] text-muted">Balken: deine Durchschnittsnote (Achse 70–100) · Zahl dahinter: Anzahl Weine</div>
                 </div>
                 {data.value.premium !== null && (
                   <div className="rounded-[18px] bg-chip px-3.5 py-3 text-[13px] leading-snug text-ink-2">
@@ -173,11 +172,11 @@ export default function TastePage() {
                 )}
               </>
             ) : (
-              <div className="text-sm leading-normal text-ink-2">Noch keiner deiner Weine hat eine Preisklasse. Trag sie auf der Weinseite ein, dann siehst du hier, wie viel Genuss du fürs Geld bekommst.</div>
+              <div className="text-sm leading-normal text-ink-2">Noch keine Preisklassen hinterlegt. Trag sie auf der Weinseite ein.</div>
             )}
             {data.value.withoutPrice > 0 && data.value.classes.some((c) => c.wines > 0) && (
               <div className="text-xs leading-normal text-muted">
-                {data.value.withoutPrice} {data.value.withoutPrice === 1 ? 'Wein hat' : 'Weine haben'} noch keine Preisklasse. Auf der Weinseite nachtragen.
+                {data.value.withoutPrice} {data.value.withoutPrice === 1 ? 'Wein' : 'Weine'} ohne Preisklasse
               </div>
             )}
           </Card>
@@ -186,12 +185,14 @@ export default function TastePage() {
         <Card className="flex flex-col gap-4">
           <CardTitle>Geschmacksmatrix</CardTitle>
           <div className="text-[13px] leading-normal text-ink-2">
-            Wo deine Weine liegen: eingeordnet nach Katalog bzw. Rebsorte, nicht nach deiner eigenen Angabe zu Körper und Säure.
+            Wo deine Weine liegen und wie gut sie dir gefallen.
           </div>
-          <Segmented label="Weinfarbe" value={color} onChange={(v) => { if (v) { setColor(v); setSelected(null) } }} options={[{ value: 'rot', label: 'Rot' }, { value: 'weiss', label: 'Weiß' }]} />
+          <Segmented label="Weinfarbe" value={color} onChange={(v) => { if (v) { setColor(v); setSelected(null) } }} options={[{ value: 'weiss', label: 'Weiß' }, { value: 'rot', label: 'Rot' }]} />
           <div className="flex gap-2">
-            <div className="flex w-5 flex-none items-center justify-center">
-              <span className="-rotate-90 text-xs font-bold whitespace-nowrap text-muted">Säure →</span>
+            <div className="flex w-5 flex-none flex-col items-center justify-between py-1 text-xs font-bold text-muted">
+              <span className="rotate-180 [writing-mode:vertical-rl]">frisch</span>
+              <span className="rotate-180 [writing-mode:vertical-rl]">Säure →</span>
+              <span className="rotate-180 [writing-mode:vertical-rl]">mild</span>
             </div>
             <div className="grid flex-1 grid-cols-5 gap-1">
               {data.cells.flat().map((c) => {
@@ -227,7 +228,7 @@ export default function TastePage() {
             <span>kräftig</span>
           </div>
           <div className="text-xs leading-normal text-ink-2">
-            Zahl im Feld: deine Durchschnittsnote der Weine dort. Je dunkler, desto besser bewertet. Graue Felder: typische Rebsorten, aber noch nichts bewertet. Feld antippen für deine Weine und die Rebsorten.
+            Zahl = deine Ø-Note, je dunkler, desto besser. Feld antippen für Weine und Rebsorten.
           </div>
           {sel && (
             <div className="flex flex-col gap-2 rounded-[18px] bg-chip p-3.5">
@@ -276,14 +277,14 @@ export default function TastePage() {
 
         {data.rows.length > 0 && (
           <Card className="flex flex-col gap-3.5">
-            <CardTitle right={<Hint>nach Median</Hint>}>Verlässlichkeit je Rebsorte</CardTitle>
+            <CardTitle>Verlässlichkeit je Rebsorte</CardTitle>
             {data.rows.map((r) => {
               const inner = (
                 <>
                   <span className="flex w-[120px] flex-none flex-col gap-px">
                     <span className="truncate text-sm font-bold">{r.name}</span>
                     <span className="text-xs text-muted">
-                      {r.s.n} Bew. · {r.s.kind === 'box' ? `Median ${Math.round(r.s.median)}` : 'zu wenige'}
+                      {r.s.n} Bew. · {r.s.kind === 'box' ? `meist ${Math.round(r.s.median)}` : 'zu wenige'}
                     </span>
                   </span>
                   <Boxplot s={r.s} />
@@ -300,7 +301,7 @@ export default function TastePage() {
               <AxisLabels />
             </div>
             <div className="rounded-[18px] bg-chip px-3.5 py-3 text-xs leading-normal text-ink-2">
-              Box: mittlere Hälfte deiner Bewertungen. Strich: Median. Linien: Spannweite. Offener Punkt: Ausreißer (ab 10 Bewertungen). Unter 5 Bewertungen siehst du nur Einzelpunkte.
+              Je schmaler die Box, desto verlässlicher gefällt dir die Sorte. Strich = typische Note.
             </div>
           </Card>
         )}

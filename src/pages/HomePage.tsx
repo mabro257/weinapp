@@ -118,7 +118,7 @@ export default function HomePage() {
           <CardTitle
             right={
               recent.data && recent.data.length > 0 ? (
-                <Link to="/ich" className="text-sm font-bold no-underline">
+                <Link to="/ich/bewertungen" className="text-sm font-bold no-underline">
                   Alle {recent.data.length}
                 </Link>
               ) : undefined

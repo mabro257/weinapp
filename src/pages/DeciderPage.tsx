@@ -135,18 +135,10 @@ export default function DeciderPage() {
 
   return (
     <Page>
-      <PageTitle title="Decider" sub={mode === 'tisch' ? 'Unsicher, welcher Wein allen schmeckt?' : 'Unsicher zwischen mehreren Weinen?'} />
+      <PageTitle title="Decider" sub={mode === 'tisch' ? 'Welcher Wein schmeckt allen?' : 'Welcher Wein passt am besten zu dir?'} />
       {base.error && <ErrorBox message={base.error} />}
 
       <div className="flex flex-col gap-4 px-4 pt-5">
-        <div className="flex flex-col gap-2.5 px-1">
-          <div className="text-[15px] leading-normal text-ink-2">
-            Füge die Weine hinzu, zwischen denen du schwankst. Der Decider vergleicht sie mit deinem Geschmack und sagt, welcher am besten passt und warum.
-          </div>
-          <div className="text-[13px] leading-normal text-muted">
-            Zum Beispiel an der Weinkarte im Restaurant, vor dem Regal im Supermarkt, beim Weinhändler oder wenn du ein Geschenk aussuchst.
-          </div>
-        </div>
         <div className="rounded-full bg-card p-1">
           <Segmented label="Für wen" value={mode} onChange={(v) => v && setMode(v)} options={[{ value: 'ich', label: 'Nur für mich' }, { value: 'tisch', label: 'Für mehrere' }]} />
         </div>
@@ -162,7 +154,7 @@ export default function DeciderPage() {
               ))}
             </div>
             <div className="text-xs text-muted">
-              {(base.data?.friends.length ?? 0) === 0 ? 'Noch keine Freunde: Lege unter „Freunde" eine Gruppe an.' : 'Aus deinen Gruppen. Grundlage sind ihre geteilten Bewertungen.'}
+              {(base.data?.friends.length ?? 0) === 0 ? 'Noch keine Freunde: Lege unter „Freunde" eine Gruppe an.' : 'Aus deinen Gruppen.'}
             </div>
           </Card>
         )}
@@ -236,7 +228,7 @@ export default function DeciderPage() {
               ))}
             </div>
           )}
-          {items.length < 2 && <div className="pt-3 text-[13px] text-muted">Füge mindestens zwei Weine hinzu. Ist ein Wein nicht im Katalog, wähle einfach seine Rebsorte. Den Preis von Karte oder Regal kannst du dazuschreiben.</div>}
+          {items.length < 2 && <div className="pt-3 text-[13px] text-muted">Mindestens zwei Weine hinzufügen, von Karte, Regal oder Liste. Nicht im Katalog? Rebsorte wählen.</div>}
         </Card>
 
         {mode === 'tisch' && tableResults.length > 0 && (
@@ -277,7 +269,7 @@ export default function DeciderPage() {
               )
             })}
             <div className="px-1 text-xs leading-normal text-muted">
-              Gemeinsamer Wert: Durchschnitt aller Passungen, abgewertet, wenn jemand deutlich darunter liegt. So gewinnt der Wein, mit dem alle glücklich sind.
+              Es gewinnt der Wein, mit dem alle zufrieden sind.
             </div>
           </>
         )}
@@ -329,7 +321,7 @@ export default function DeciderPage() {
               ),
             )}
             <div className="px-1 text-[13px] leading-normal text-muted">
-              Grundlage sind deine {base.data?.mine.length ?? 0} Bewertungen. Die Community-Noten fließen nur ergänzend ein. Der Preis wird angezeigt, aber nicht bewertet.
+              Auf Basis deiner {base.data?.mine.length ?? 0} Bewertungen.
             </div>
           </>
         )}

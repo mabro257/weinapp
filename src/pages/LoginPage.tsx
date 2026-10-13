@@ -25,7 +25,7 @@ export default function LoginPage() {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col">
       <div className="flex flex-col gap-3 rounded-b-[36px] bg-hero px-5 pt-16 pb-14 text-white">
-        <div className="text-sm font-semibold opacity-90">Weinbewertung</div>
+        <div className="text-sm font-semibold opacity-90">WineWithFriends</div>
         <h1 className="m-0 text-[30px] leading-tight font-extrabold">Willkommen</h1>
         <div className="text-[15px] opacity-90">Melde dich mit deiner E-Mail-Adresse an. Du bekommst einen Code, kein Passwort nötig.</div>
       </div>
@@ -42,13 +42,21 @@ export default function LoginPage() {
         }}
       >
         {step === 'email' ? (
-          <Field label="E-Mail-Adresse" htmlFor="email">
-            <TextInput id="email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@beispiel.de" />
-          </Field>
+          <>
+            <Field label="E-Mail-Adresse" htmlFor="email">
+              <TextInput id="email" type="email" autoComplete="email" inputMode="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@beispiel.de" />
+            </Field>
+            <div className="rounded-2xl bg-chip px-4 py-3 text-[13px] leading-snug text-ink-2">
+              <b>Tipp:</b> Die E-Mail mit dem Code landet oft im <b>Spam-Ordner</b>. Schau dort nach, wenn sie nicht gleich kommt.
+            </div>
+          </>
         ) : (
           <>
             <div className="text-sm leading-relaxed text-ink-2">
-              Wir haben einen Code an <strong>{email}</strong> geschickt. Schau auch im Spam-Ordner nach.
+              Wir haben einen Code an <strong>{email}</strong> geschickt.
+            </div>
+            <div className="rounded-2xl bg-rose-badge px-4 py-3 text-[13px] leading-snug font-semibold text-berry-dark">
+              Keine E-Mail da? Bitte im Spam-Ordner nachsehen, dort landet der Code häufig.
             </div>
             <Field label="Code aus der E-Mail" htmlFor="code">
               <TextInput

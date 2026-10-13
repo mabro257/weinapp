@@ -140,6 +140,9 @@ export default function TastingPage() {
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<WineHit[]>([])
   const [editPeople, setEditPeople] = useState(false)
+  const [editDate, setEditDate] = useState(false)
+  const [newDate, setNewDate] = useState('')
+  const [dateError, setDateError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!q.trim()) {
@@ -185,6 +188,21 @@ export default function TastingPage() {
   const myScore = (wineId: number) => {
     const xs = mine.filter((r) => r.wineId === wineId).map((r) => r.score)
     return xs.length ? Math.round(mean(xs)!) : null
+  }
+  // Schon bewertet: Klick öffnet die bestehende Bewertung zum Ändern
+  const rateLink = (wineId: number) => {
+    const existing = mine.filter((r) => r.wineId === wineId).sort((a, b) => b.id - a.id)[0]
+    return `/wein/${wineId}/bewerten?abend=${tasting.id}${existing ? `&bewertung=${existing.id}` : ''}`
+  }
+  const saveDate = async () => {
+    setDateError(null)
+    try {
+      await api.setTastingDate(tasting.id, newDate)
+      setEditDate(false)
+      res.reload()
+    } catch (e) {
+      setDateError(e instanceof Error ? e.message : String(e))
+    }
   }
 
   const add = async (w: WineHit) => {
@@ -292,7 +310,26 @@ export default function TastingPage() {
         <div className="mb-2"><HeroBack to="/freunde" /></div>
         <span className="self-start rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold">{tastingWhen(tasting.eventDate)} · Gastgeber {isHost ? 'du' : tasting.hostName}</span>
         <h1 className="m-0 text-[28px] leading-[1.1] font-extrabold">{tasting.title}</h1>
-        <div className="text-[15px] opacity-90">{tasting.groupName} · {formatDate(tasting.eventDate)}</div>
+        {editDate ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <label htmlFor="abend-datum" className="sr-only">Neues Datum</label>
+              <input id="abend-datum" type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} className="h-11 min-w-0 flex-1 rounded-full border-0 bg-white px-4 text-base font-semibold text-ink outline-none" />
+              <button type="button" onClick={saveDate} disabled={!newDate} className="h-11 flex-none rounded-full bg-white px-4 text-sm font-bold text-hero disabled:opacity-50">Speichern</button>
+              <button type="button" aria-label="Abbrechen" onClick={() => setEditDate(false)} className="flex size-11 flex-none items-center justify-center rounded-full bg-white/15"><IconClose size={18} /></button>
+            </div>
+            {dateError && <div role="alert" className="text-sm font-semibold">{dateError}</div>}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-x-3 text-[15px] opacity-90">
+            <span>{tasting.groupName} · {formatDate(tasting.eventDate)}</span>
+            {isHost && (
+              <button type="button" onClick={() => { setNewDate(tasting.eventDate); setEditDate(true) }} className="min-h-10 text-sm font-bold underline underline-offset-2">
+                Datum ändern
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="relative -mt-10 flex flex-col gap-4 px-4">
@@ -348,7 +385,7 @@ export default function TastingPage() {
             const s = myScore(w.id)
             return (
               <div key={w.id} className="flex items-center gap-2 border-t border-line py-3">
-                <Link to={`/wein/${w.id}/bewerten?abend=${tasting.id}`} className="flex min-w-0 flex-1 items-center gap-3 text-ink no-underline">
+                <Link to={rateLink(w.id)} className="flex min-w-0 flex-1 items-center gap-3 text-ink no-underline">
                   <span className="flex size-8 flex-none items-center justify-center rounded-full bg-chip text-sm font-extrabold text-ink-2">{i + 1}</span>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className={`text-[15px] font-bold ${w.visible ? '' : 'text-muted'}`}>{w.name}</span>
@@ -357,7 +394,7 @@ export default function TastingPage() {
                     </span>
                   </span>
                   {s !== null ? (
-                    <span className="flex h-9 min-w-[52px] flex-none items-center justify-center rounded-xl bg-rose-badge px-2.5 text-base font-extrabold text-berry">{s}</span>
+                    <span aria-label={`Deine Note ${s}, tippen zum Ändern`} className="flex h-9 min-w-[52px] flex-none items-center justify-center rounded-xl bg-rose-badge px-2.5 text-base font-extrabold text-berry">{s}</span>
                   ) : (
                     <span className="flex h-9 flex-none items-center rounded-full bg-berry px-3.5 text-[13px] font-bold text-white">Bewerten</span>
                   )}

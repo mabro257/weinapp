@@ -1,59 +1,49 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { mean } from '../lib/stats'
-import { formatDate, formatMonth, normalize } from '../lib/text'
 import { downloadCsv, useAsync } from '../lib/util'
 import { resetDemo } from '../lib/mockApi'
 import { useApp } from '../App'
-import { Card, ErrorBox, Loading, Page, PageTitle, ScoreBadge, TagChip, WineThumb } from '../components/ui'
-import { IconBookmark, IconDownload, IconGlass, IconLock, IconLogout, IconMedal, IconNext, IconSearch } from '../components/Icons'
+import { Card, ErrorBox, Page, PageTitle, WineThumb } from '../components/ui'
+import { IconBookmark, IconDownload, IconGlass, IconLogout, IconMedal, IconNext } from '../components/Icons'
 
 export default function HistoryPage() {
   const { profile, refreshProfile } = useApp()
   const res = useAsync(() => api.myRatings(), [])
   const saved = useAsync(() => api.savedWines(), [])
-  const [q, setQ] = useState('')
-  const [tag, setTag] = useState<string | null>(null)
   const [editName, setEditName] = useState(false)
   const [name, setName] = useState(profile.displayName)
 
   const all = res.data ?? []
-  const tagList = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const r of all) for (const t of r.tags) counts.set(t, (counts.get(t) ?? 0) + 1)
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([t]) => t)
-  }, [all])
-
-  const nq = normalize(q)
-  const list = all.filter(
-    (r) =>
-      (!tag || r.tags.includes(tag)) &&
-      (!nq || normalize([r.wineName, r.winery, r.region, r.note, ...r.tags].filter(Boolean).join(' ')).includes(nq)),
-  )
   const avg = mean(all.map((r) => r.score))
   const grapeCount = new Set(all.flatMap((r) => (r.mainGrapeId === null ? [] : [r.mainGrapeId]))).size
 
-  let lastMonth = ''
-
   return (
     <Page>
-      <PageTitle title="Meine Verkostungen" />
+      <PageTitle title="Ich" />
       {res.error && <ErrorBox message={res.error} />}
 
       <div className="flex flex-col gap-4 px-4 pt-5">
-        <div className="grid grid-cols-3 gap-2.5">
-          {[
-            [String(all.length), 'Bewertungen'],
-            [avg === null ? '–' : String(Math.round(avg)), 'Ø Note'],
-            [String(grapeCount), 'Rebsorten'],
-          ].map(([v, l], i) => (
-            <div key={l} className="flex flex-col gap-0.5 rounded-[22px] bg-card px-3 py-3.5 text-center">
-              <span className={`text-2xl font-extrabold ${i === 1 ? 'text-berry' : ''}`}>{v}</span>
-              <span className="text-xs font-semibold text-muted">{l}</span>
-            </div>
-          ))}
-        </div>
+        <Link to="/ich/bewertungen" className="flex flex-col gap-3.5 rounded-[28px] bg-hero p-5 text-white no-underline">
+          <span className="flex items-center justify-between">
+            <span className="text-lg font-extrabold">Meine Bewertungen</span>
+            <IconNext size={20} />
+          </span>
+          <span className="grid grid-cols-3 gap-2">
+            {[
+              [res.data ? String(all.length) : '…', 'Bewertungen'],
+              [avg === null ? '–' : String(Math.round(avg)), 'Ø Note'],
+              [String(grapeCount), 'Rebsorten'],
+            ].map(([v, l]) => (
+              <span key={l} className="flex flex-col gap-0.5 rounded-[18px] bg-white/15 px-2 py-2.5 text-center">
+                <span className="text-2xl font-extrabold">{v}</span>
+                <span className="text-xs font-semibold opacity-90">{l}</span>
+              </span>
+            ))}
+          </span>
+          <span className="text-[13px] font-semibold opacity-90">Alle ansehen, durchsuchen und nach Ort oder Anlass filtern</span>
+        </Link>
 
         <Link to="/abzeichen" className="flex items-center gap-3.5 rounded-[22px] bg-card px-4 py-3.5 text-ink no-underline">
           <span className="flex size-10 flex-none items-center justify-center rounded-full bg-berry text-white"><IconMedal size={22} /></span>
@@ -71,58 +61,6 @@ export default function HistoryPage() {
             <IconNext size={18} className="text-muted" />
           </Link>
         )}
-
-        <div className="flex h-[52px] items-center gap-2.5 rounded-full bg-card px-[18px]">
-          <IconSearch size={20} className="flex-none text-muted" />
-          <label htmlFor="vsuche" className="sr-only">Verkostungen durchsuchen</label>
-          <input id="vsuche" type="search" placeholder="Wein, Ort, Anlass oder Notiz" value={q} onChange={(e) => setQ(e.target.value)} className="h-11 min-w-0 flex-1 border-0 bg-transparent text-base outline-none" />
-        </div>
-
-        {tagList.length > 0 && (
-          <div role="group" aria-label="Nach Ort oder Anlass filtern" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5">
-            {[null, ...tagList].map((t) => {
-              const on = t === tag
-              return (
-                <button key={t ?? 'alle'} type="button" aria-pressed={on} onClick={() => setTag(t)} className={`h-10 flex-none rounded-full px-4 text-sm ${on ? 'bg-berry font-bold text-white' : 'bg-card font-semibold text-ink-2'}`}>
-                  {t ?? 'Alle'}
-                </button>
-              )
-            })}
-          </div>
-        )}
-
-        <Card className="px-5 pt-2 pb-1">
-          {res.loading && !res.data && <Loading />}
-          {res.data && list.length === 0 && <div className="py-[18px] text-sm text-muted">{all.length ? 'Keine passenden Verkostungen.' : 'Noch keine Verkostung erfasst.'}</div>}
-          {list.map((r, i) => {
-            const month = formatMonth(r.tastedOn)
-            const showMonth = month !== lastMonth
-            lastMonth = month
-            const last = i === list.length - 1
-            return (
-              <div key={r.id}>
-                {showMonth && <div className="pt-3.5 pb-1 text-[13px] font-extrabold text-muted">{month}</div>}
-                <Link to={`/wein/${r.wineId}`} className={`flex gap-3.5 py-3.5 text-ink no-underline ${last ? '' : 'border-b border-line'}`}>
-                  <ScoreBadge score={r.score} />
-                  <div className="flex min-w-0 flex-col gap-1">
-                    <div className="text-[15px] font-bold">{r.wineName}</div>
-                    <div className="text-xs font-semibold text-muted">
-                      {formatDate(r.tastedOn)}
-                      {r.vintage ? ` · Jahrgang ${r.vintage}` : ''}
-                      {!r.shared && (
-                        <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-chip px-2 py-0.5 align-middle text-[11px] font-bold text-ink-2">
-                          <IconLock size={11} /> privat
-                        </span>
-                      )}
-                    </div>
-                    {r.tags.length > 0 && <div className="flex flex-wrap gap-1.5">{r.tags.map((t) => <TagChip key={t} label={t} />)}</div>}
-                    {r.note && <div className="text-[13px] leading-snug text-muted">{r.note}</div>}
-                  </div>
-                </Link>
-              </div>
-            )
-          })}
-        </Card>
 
         <Card className="pb-1">
           <h2 className="m-0 mb-2 text-lg font-bold">Gemerkte Weine</h2>

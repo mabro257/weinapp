@@ -13,20 +13,32 @@ export default function RatePage() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const tastingId = params.get('abend') ? Number(params.get('abend')) : null
+  const editId = params.get('bewertung') ? Number(params.get('bewertung')) : null
   const res = useAsync(async () => {
-    const [wine, tags, groups, tasting] = await Promise.all([
+    const [wine, tags, groups, tasting, mine] = await Promise.all([
       api.getWine(wineId),
       api.myTags(),
       api.myGroups(),
       tastingId ? api.tasting(tastingId) : Promise.resolve(null),
+      editId ? api.myRatings() : Promise.resolve([]),
     ])
-    if (tasting) {
+    const existing = editId ? mine.find((r) => r.id === editId) ?? null : null
+    if (existing) {
+      // Bestehende Bewertung ändern: Felder vorbelegen
+      setScore(existing.score)
+      setVintage(existing.vintage ? String(existing.vintage) : '')
+      setDate(existing.tastedOn)
+      setTaste({ body: existing.body, acidity: existing.acidity, tannin: existing.tannin })
+      setTags(existing.tags)
+      setNote(existing.note ?? '')
+      setShared(existing.shared)
+    } else if (tasting) {
       // Bewertung im Rahmen eines Weinabends: Datum und Anlass automatisch setzen
       setDate(tasting.tasting.eventDate)
       setTags((cur) => (cur.includes(tasting.tasting.title) ? cur : [...cur, tasting.tasting.title]))
     }
-    return { wine, tags, groups, tasting }
-  }, [wineId, tastingId])
+    return { wine, tags, groups, tasting, existing }
+  }, [wineId, tastingId, editId])
 
   const [score, setScore] = useState(85)
   const [vintage, setVintage] = useState('')
@@ -64,7 +76,7 @@ export default function RatePage() {
       const v = vintage.trim() ? Number(vintage) : null
       if (v !== null && (!Number.isInteger(v) || v < 1900 || v > 2100)) throw new Error('Bitte einen gültigen Jahrgang eingeben, z. B. 2021.')
       const pending = newTag.trim()
-      await api.createRating({
+      const input = {
         wineId,
         score,
         vintage: v,
@@ -76,7 +88,9 @@ export default function RatePage() {
         tags: pending && !tags.includes(pending) ? [...tags, pending] : tags,
         shared,
         tastingId: res.data?.tasting ? tastingId : null,
-      })
+      }
+      if (res.data?.existing) await api.updateRating(res.data.existing.id, input)
+      else await api.createRating(input)
       if (photo && !wine.labelUrl) {
         try {
           await api.uploadLabel(wineId, await resizeImage(photo))
@@ -93,7 +107,7 @@ export default function RatePage() {
 
   return (
     <Page nav={false}>
-      <FormHeader title="Neue Bewertung" sub={[wine.name, wine.winery].filter(Boolean).join(' · ')} closeIcon={<IconClose size={20} />} />
+      <FormHeader title={res.data?.existing ? 'Bewertung ändern' : 'Neue Bewertung'}sub={[wine.name, wine.winery].filter(Boolean).join(' · ')} closeIcon={<IconClose size={20} />} />
 
       <div className="flex flex-col gap-4 px-4 pt-4">
         {res.data?.tasting && (
@@ -256,7 +270,7 @@ export default function RatePage() {
 
         <PrimaryButton onClick={save} disabled={busy}>
           <IconCheck size={20} />
-          {busy ? 'Speichert …' : 'Bewertung speichern'}
+          {busy ? 'Speichert …' : res.data?.existing ? 'Änderungen speichern' : 'Bewertung speichern'}
         </PrimaryButton>
       </div>
     </Page>
