@@ -6,9 +6,9 @@ with neu(name, type, grape) as (values
   ('Riesling Alte Reben', 'weiss', 20),
   ('Rosé', 'rose', null::int),
   ('Pinot Noir Rosé Sekt', 'schaum', 3),
-  ('ELF FREUNDE Grauburgunder', 'weiss', 24),
-  ('ELF FREUNDE Riesling', 'weiss', 20),
-  ('ELF FREUNDE Rosé', 'rose', null),
+  ('DREI FREUNDE Grauburgunder', 'weiss', 24),
+  ('DREI FREUNDE Riesling', 'weiss', 20),
+  ('DREI FREUNDE Rosé', 'rose', null),
   ('Riesling Null (alkoholfrei)', 'weiss', 20),
   ('Rosé Null (alkoholfrei)', 'rose', null),
   ('Rosé Sparkling Null (alkoholfrei)', 'schaum', null)

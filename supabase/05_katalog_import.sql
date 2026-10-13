@@ -46,7 +46,7 @@ on conflict do nothing;
 
 -- 5. Suchtext für alle importierten Weine in einem Schritt berechnen (inkl. Rebsorten und Synonyme)
 update public.wines w
-set search_text = public.norm(concat_ws(' ', w.name, w.winery, w.region, w.country, gt.txt))
+set search_text = public.num_words(public.norm(concat_ws(' ', w.name, w.winery, w.region, w.country, gt.txt)))
 from (
   select w2.id,
          (select string_agg(g.name || ' ' || array_to_string(g.synonyms, ' '), ' ')
