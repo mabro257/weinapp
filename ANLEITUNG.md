@@ -16,6 +16,7 @@ Stand 10.10.2026. Alles läuft im Browser, du musst nichts installieren.
 10. [Update „Sozial"](#teil-10--update-sozial-gruppen-weinabend-empfehlen-zwilling-abzeichen)
 11. [Update 4: WineWithFriends, Etikett-Kamera, Zahlen-Suche](#teil-11--update-4-winewithfriends-etikett-kamera-zahlen-suche)
 12. [Update 5: Namensregel, Dubletten, Geschmack, Hilfe](#teil-12--update-5-namensregel-dubletten-geschmack-hilfe)
+13. [Update 6: Preisklassen, III Freunde, Weinabend löschen](#teil-13--update-6-preisklassen-iii-freunde-weinabend-löschen)
 
 Nach Teil 2 läuft die App schon online mit Beispieldaten. Du kannst sie testen, bevor die Datenbank steht.
 
@@ -280,6 +281,18 @@ Gut zu wissen:
 7. Unter **Ich** → **Dubletten prüfen** (nur für Admins sichtbar) die vorgeschlagenen Paare durchgehen: **Links behalten** bzw. **Rechts behalten** führt zusammen, **Kein Duplikat** blendet das Paar dauerhaft aus. Behalte möglichst den Katalogeintrag.
 
 So legst du ab jetzt Weine an: **Name** wie auf dem Etikett, aber ohne Weingut und ohne Jahrgang. **Weingut** ins eigene Feld, **Jahrgang** bei der Bewertung. Die App weist dich auf Abweichungen hin und schlägt eine Korrektur vor.
+
+---
+
+## Teil 13 · Update 6: Preisklassen, III Freunde, Weinabend löschen
+
+1. Netlify: **Stop builds**.
+2. Auf GitHub die Ordner aus `weinapp-update-6.zip` hochladen (Tabelle in der Nachricht von Claude).
+3. Supabase → **SQL Editor** → **New query**: Inhalt von `11_iii_freunde_weinabend.sql` → **Run**. Am Ende steht die Liste der III-Freunde-Weine, „DREI FREUNDE Rosé" mit `zusammengefuehrt true`.
+4. Netlify: **Activate builds** → **Deploys** → **Trigger deploy** → **Deploy project**.
+5. App am Handy schließen und neu öffnen. Unter **Ich → Dubletten prüfen** entscheiden, ob „Riesling" und „Grauburgunder" von III Freunde dieselben sind wie die Katalogeinträge „Riesling" und „Grauburgunder Trocken".
+
+Weinabend löschen: als Gastgeber auf der Seite des Abends ganz unten **Weinabend absagen** bzw. **Weinabend löschen**, Schalter **Alle Bewertungen löschen** nach Wunsch, dann **Endgültig löschen**.
 
 ---
 

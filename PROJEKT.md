@@ -114,6 +114,17 @@ Getestet: `09` gegen Postgres (PGlite) inkl. zweitem Lauf und erneutem `06`, Suc
 
 Getestet: 10a/10b gegen Postgres (PGlite), auch zweimal hintereinander. Geprüft wurden die Zusammenführung inklusive Merkliste, Weinabend und Empfehlung, die Zugriffsregeln (nur Admin), dass Rosso und Brunello vom selben Weingut keine Dublette sind, dass Tippfehler beim Anlegen trotzdem gefunden werden, und der Katalog-Import mit den bereinigten Daten. Dazu Typecheck, Build und alle neuen Ansichten im Demo-Modus.
 
+## Update 6 (13.10.2026)
+
+| Thema | Umsetzung |
+| --- | --- |
+| Preisklassen | € bis 5 €, €€ bis 10 €, €€€ bis 15 €, €€€€ über 15 € (Ladenpreis). Gespeichert wird weiterhin 1–4, bestehende Angaben gelten jetzt nach der neuen Skala. |
+| Dubletten mit Zahlen | Der Vergleich behandelt „III", „3" und „drei" gleich, „trocken"/„dry" zählen nicht. Die Eingabehilfe erkennt das Weingut im Namen auch in anderer Schreibweise („DREI FREUNDE Rosé" bei „III Freunde"). |
+| III Freunde | „DREI FREUNDE Rosé" mit „Rosé" zusammengeführt. „DREI FREUNDE Riesling/Grauburgunder" heißen jetzt „Riesling"/„Grauburgunder" und erscheinen unter „Dubletten prüfen" neben „Riesling" bzw. „Grauburgunder Trocken" aus dem Katalog; der Admin entscheidet. |
+| Weinabend löschen | Gastgeber kann einen Abend absagen (laufend) bzw. löschen (aufgelöst). Schalter „Alle Bewertungen löschen": an = Bewertungen des Abends für alle gelöscht; aus = sie bleiben als normale Bewertungen ohne Bezug zum Abend (bisher verdeckte Noten werden dadurch für die Gruppe sichtbar, der Hinweis steht im Dialog). |
+
+Getestet: 11 gegen Postgres (PGlite), auch zweimal hintereinander, zusammen mit erneutem 06. Bewertungen ziehen beim Zusammenführen mit um, nur der Gastgeber darf löschen, beide Löschvarianten funktionieren. Dazu Typecheck, Build und im Demo-Modus Namenshilfe, Preistext und Weinabend löschen.
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.

@@ -45,7 +45,11 @@ Stand 13.10.2026, App-Name **WineWithFriends** (Titel, Manifest, Login, Einladun
 | `10a_katalog_daten.sql` | Korrekturliste OFF (1.842 Umbenennungen, 283 Dubletten) in Schema `staging`, **generiert** von `tools/clean-off.mjs` | SQL Editor, vor 10b |
 | `10b_namen_dubletten.sql` | `token_key`, `wine_similarity`, `similar_wine_ids`, neues `similar_wines`, `merge_wine_into` (zieht alles um), `merge_wines`, `duplicate_candidates`, `dismiss_duplicate`, Tabelle `duplicate_dismissed`; wendet 10a an und löscht `staging` | SQL Editor |
 
-`05` braucht `num_words` aus `09`. Live beim Nutzer: bis Update 4 (09). Geliefert, Upload offen: Update 5 (10a/10b, Namensregel, Dubletten, Matrix, Hilfe, Top 5). **Am Anfang beim Nutzer nachfragen.**
+| `11_iii_freunde_weinabend.sql` | `token_key` mit Zahlwörtern (III = 3 = drei) und ohne „trocken/dry", III Freunde: „DREI FREUNDE Rosé" in „Rosé" zusammengeführt, „DREI FREUNDE" aus Namen entfernt, `delete_tasting(id, mit_bewertungen)` | SQL Editor, nach 10b |
+
+`05` braucht `num_words` aus `09`. Live beim Nutzer: bis Update 5 (10a/10b). Geliefert, Upload offen: Update 6 (11, Preisklassen, Weinabend löschen). **Am Anfang beim Nutzer nachfragen.**
+
+Preisklassen (Nutzer, 13.10.2026): € bis 5 €, €€ bis 10 €, €€€ bis 15 €, €€€€ über 15 € (Ladenpreis). Gespeichert wird weiter 1–4.
 
 **Namensregel (vom Nutzer gefordert, 13.10.2026):** Name = Name des Weins vom Etikett, ohne Weingut und ohne Jahrgang; Weingut, Rebsorte, Region, Jahrgang in eigenen Feldern. Gleiche Logik dreifach: `src/lib/naming.ts` (Eingabehilfe, Demo-Ähnlichkeit), `tools/naming.mjs` (Katalogbereinigung), SQL `token_key`/`wine_similarity` (Stoppwortlisten synchron halten). Dublette = Ähnlichkeit ≥ 0,8 (Name ohne Weingut-Wörter 70 %, Weingut 30 %), Vorschlag beim Anlegen ab 0,45.
 
