@@ -18,7 +18,7 @@ await db.exec(`
   alter table storage.objects enable row level security;
 `)
 const sql = (f) => readFileSync(`${app}/supabase/${f}`, 'utf8')
-for (const f of ['01_schema.sql', '02_glossar.sql', '03_beispielweine.sql', '04_update_suche.sql', '07_update_merkliste_suche.sql', '08_sozial.sql', '09_update_zahlen_freunde.sql', '10b_namen_dubletten.sql']) {
+for (const f of ['01_schema.sql', '02_glossar.sql', '03_beispielweine.sql', '04_update_suche.sql', '07_update_merkliste_suche.sql', '08_sozial.sql', '09_update_zahlen_freunde.sql', '10b_namen_dubletten.sql', '11_iii_freunde_weinabend.sql', '12_weinabend_preis.sql', '13_dubletten_schneller.sql']) {
   await db.exec(sql(f)); console.log('OK', f)
 }
 // Nutzer, der einen Demo-Wein bewertet hat (darf beim Import nicht gelöscht werden)

@@ -72,6 +72,9 @@ await db.exec(sql('10a_katalog_daten.sql'))
 await db.exec(sql('10b_namen_dubletten.sql'))
 await db.exec(sql('10a_katalog_daten.sql'))
 await db.exec(sql('10b_namen_dubletten.sql')) // zweiter Lauf harmlos
+// Stand ab Update 9: schnellere, strengere Dubletten-Prüfung
+for (const f of ['11_iii_freunde_weinabend.sql', '12_weinabend_preis.sql', '13_dubletten_schneller.sql']) await db.exec(sql(f))
+await db.exec('grant execute on all functions in schema public to authenticated; revoke execute on function public.merge_wine_into(bigint, bigint) from authenticated;')
 console.log('OK 10a/10b zweimal')
 
 await q('OFF-Lugana:', 'select name, winery, merged_into = $1 as in_xwines from public.wines where id = $2', [xw, offw])
