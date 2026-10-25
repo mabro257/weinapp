@@ -313,9 +313,9 @@ So läuft ein Weinabend jetzt: Beim Anlegen wählst du, wer dabei ist. Weine fü
 
 ## Später: Änderungen hochladen
 
-1. GitHub → Repository → **Add file** → **Upload files**.
-2. Alle geänderten Dateien **mit ihrer Ordnerstruktur** auf einmal hineinziehen. Gleichnamige Dateien werden überschrieben.
-3. **Commit changes** → Netlify veröffentlicht automatisch (15 Credits).
+Seit 25.10.2026 lädt Claude Änderungen selbst per Git hoch, nachdem du sie freigegeben hast. Netlify veröffentlicht danach automatisch (15 Credits). Du musst nur noch neue SQL-Skripte im Supabase SQL Editor ausführen, Claude sagt dir jeweils welche.
+
+Falls die GitHub-Anmeldung einmal abläuft, öffnet sich beim nächsten Hochladen ein Anmeldefenster: dort einfach bei GitHub anmelden.
 
 ## Kosten im Überblick (Stand 10.10.2026)
 

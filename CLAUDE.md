@@ -1,6 +1,6 @@
 # WineWithFriends (Weinbewertungs-App): Kontext für Claude
 
-Stand 13.10.2026, App-Name **WineWithFriends** (Titel, Manifest, Login, Einladung). Diese Datei wird in Claude Code automatisch geladen. Ausführlich: `PROJEKT.md` (Entscheidungen), `ANLEITUNG.md` (Schritte für den Nutzer), `tools/README.md` (Hilfsskripte).
+Stand 25.10.2026, App-Name **WineWithFriends** (Titel, Manifest, Login, Einladung). Diese Datei wird in Claude Code automatisch geladen (über `../CLAUDE.md` im Ordner `Claude-Weinapp`). Ausführlich: `PROJEKT.md` (Entscheidungen), `ANLEITUNG.md` (Schritte für den Nutzer), `tools/README.md` (Hilfsskripte).
 
 ## Nutzer und Arbeitsweise
 
@@ -9,14 +9,26 @@ Stand 13.10.2026, App-Name **WineWithFriends** (Titel, Manifest, Login, Einladun
 - **Vor größeren Funktionen zuerst Entwürfe zeigen** (Design-Canvas, siehe unten), erst nach Freigabe bauen. Kleine Korrekturen direkt umsetzen. Seit Update 4 sagt der Nutzer meist „umsetzen": dann direkt bauen und im Bericht die getroffenen Gestaltungsentscheidungen nennen.
 - Ergebnisse immer selbst prüfen (Typecheck, Build, Browser-Test im Demo-Modus, SQL gegen PGlite), dann ehrlich berichten, was getestet ist und was nicht.
 
-## Wichtige Einschränkungen beim Nutzer
+## Werkzeuge und Ablauf (seit 25.10.2026: Git statt Browser-Upload)
 
-- Firmenrechner **ohne Admin-Rechte**, **kein Node, kein Git** installiert. Claude lädt für Tests eine portable Node-Version (nodejs.org, ZIP, Prüfsumme prüfen) in seinen Arbeitsordner, nachdem der Nutzer zugestimmt hat. Entpacken mit `tar -xf` (Expand-Archive scheitert an langen Pfaden).
-- Firewall-Meldung zu Node.js beim lokalen Testserver: Nutzer soll „Abbrechen" klicken.
-- **Hochladen nur über die GitHub-Weboberfläche.** Drag-and-drop ganzer Ordner hat Dateien flach abgelegt. Deshalb immer **ordnerweise Upload-Links** angeben: `https://github.com/mabro257/weinapp/upload/main/<ordner>`. Dateien mit Punkt (`.github`, `.gitignore`) prüfen lassen.
-- Geänderte Dateien als ZIP-Paket liefern (Ordnerstruktur wie im Repository) plus Tabelle „Link → Dateien".
-- Einzelne Dateien alternativ über den Stift (Edit) in GitHub ersetzen lassen: Volltext zum Einfügen liefern.
-- **Netlify Free: 300 Credits/Monat, 15 pro Deploy.** Vor mehrteiligen Uploads „Stop builds", danach „Activate builds" + „Trigger deploy".
+Firmenrechner **ohne Admin-Rechte**: alles portabel in `%LOCALAPPDATA%\weinapp-tools` (= `C:\Users\Marcel.Brockmann\AppData\Local\weinapp-tools`), immer mit vollem Pfad aufrufen.
+
+| Werkzeug | Pfad |
+| --- | --- |
+| Git für Windows (portabel 2.56.0.3, inkl. Git Credential Manager) | `weinapp-tools\git\cmd\git.exe` |
+| Node.js 22 (ZIP) | `weinapp-tools\node-v22.23.3-win-x64\node.exe` (für npm: Ordner vorne in `$env:PATH`) |
+| npm-Cache | `weinapp-tools\npm-cache` (`$env:npm_config_cache`) |
+
+- **Arbeitsordner = Git-Klon** `C:\Users\Marcel.Brockmann\Downloads\Claude-Weinapp\weinapp-git` (Branch `main`, remote `https://github.com/mabro257/weinapp.git`). Der alte Ordner `weinapp` daneben ist nur noch Archiv.
+- **Anmeldung:** einmalig im Browser über den Git Credential Manager (`credential.helper=manager` im Repo), Token liegt in der Windows-Anmeldeinformationsverwaltung. Nie einen Token im Chat verlangen. Commit-Autor im Repo: „Marcel" / `mabro257@users.noreply.github.com`.
+- **Ablauf:** ändern → prüfen (Typecheck `npm run typecheck`, Build `npm run build`, SQL-Tests `node tools/test-XX.mjs .`, Browser-Test Demo-Modus) → **lokal committen** → dem Nutzer Änderungen zeigen → **erst nach seiner Freigabe `git push`**.
+- **Ein Push = ein Netlify-Deploy (15 von 300 Credits/Monat).** Änderungen sammeln, nicht für jede Kleinigkeit pushen.
+- **SQL-Skripte** führt der Nutzer weiter selbst im Supabase SQL Editor aus (kein automatisches Einspielen). Datenbank-Änderungen immer als neues nummeriertes Skript, nach dem Push mit Klickanleitung.
+- **Nie viele Dateien lokal per Node umschreiben/löschen** (Sophos-Ransomware-Schutz). Massenumwandlungen in Netlify-Build oder GitHub Actions.
+- Zeilenenden: `core.autocrlf=true` (Standard von Git für Windows), Inhalte werden mit LF gespeichert. Neue Dateien als UTF-8 ohne BOM.
+- Firewall-Meldung zu Node.js beim lokalen Testserver: Nutzer soll „Abbrechen" klicken. Testserver: `.claude/launch.json` im Ordner `Claude-Weinapp` (`vite preview` auf Port 4173).
+- Beim Browser-Upload früher verloren gegangen und am 25.10.2026 korrigiert: `.gitignore` lag als `download`, `.env.example` als `env.example` im Repository.
+- **Netlify Free: 300 Credits/Monat, 15 pro Deploy.**
 - Supabase SQL Editor zeigt bei Skripten mit Tabellen manchmal „table without RLS": **„Run and enable RLS"** wählen (Fehlalarm, RLS ist in den Skripten gesetzt).
 - Browser-Test im Demo-Modus: Die PWA cacht per Service Worker; nach neuem Build Service Worker abmelden und Caches löschen, sonst läuft die alte Version.
 - PowerShell-Fallen: Dateien immer als UTF-8 ohne BOM schreiben (`[IO.File]::WriteAllText(..., New-Object Text.UTF8Encoding $false)`), nie `Get-Content`/`Set-Content` ohne Encoding (hat schon Umlaute zerstört). Deutsche Anführungszeichen „…" in PowerShell-Strings brechen den Parser, dann besser das Edit-Werkzeug nutzen.
@@ -51,7 +63,7 @@ Stand 13.10.2026, App-Name **WineWithFriends** (Titel, Manifest, Login, Einladun
 
 | `13_dubletten_schneller.sql` | Spalte `wines.match_key` (= token_key aus Name + Weingut, per Trigger) mit GIN-Trigramm-Index; `similar_wine_ids` über diesen Index (60 Kandidaten); `wine_similarity` ohne Einzelbuchstaben im Weingut und Deckel 0,6 bei klar anderem Weingut; Dublette ab 0,92 | SQL Editor, nach 12 (Backfill ca. 1 Min.) |
 
-`05` braucht `num_words` (09) und `match_key`/`token_key` (13). Frische Installation: 01–04, 06–13, dann 05 per Action. Live beim Nutzer: bis Update 8 (App, kein SQL). Geliefert, Upload offen: Update 9 (13, Decider, Dubletten-Seite). **Am Anfang beim Nutzer nachfragen.**
+`05` braucht `num_words` (09) und `match_key`/`token_key` (13). Frische Installation: 01–04, 06–13, dann 05 per Action. Stand 25.10.2026: alles bis Update 9 ist live, alle SQL-Skripte bis 13 sind ausgeführt. Ab jetzt zeigt `git log` den Stand; nur ausgeführte SQL-Skripte beim Nutzer nachfragen.
 
 Supabase bricht App-Anfragen nach **8 Sekunden** ab: Funktionen, die über den ganzen Katalog laufen, mit `tools/perf-dubletten.mjs` (voller Katalog in PGlite) messen. Stand Update 9: Dubletten-Prüfung 1,1 s bei 83 Weinen (wächst linear, ca. 13 ms je bewertetem/angelegtem Wein), „Gibt es schon?" 25–80 ms.
 
