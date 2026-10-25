@@ -344,7 +344,7 @@ export function BottomNav() {
       style={{ paddingBottom: 'max(14px, env(safe-area-inset-bottom))' }}
     >
       <NavItem to="/" end label="Suche" icon={<IconSearch />} />
-      <NavItem to="/decider" label="Decider" icon={<IconScale />} />
+      <NavItem to="/decider" label="Auswahl" icon={<IconScale />} />
       <NavItem to="/freunde" label="Freunde" icon={<IconUsers />} />
       <NavItem to="/geschmack" label="Geschmack" icon={<IconSpark />} />
       <NavItem to="/ich" label="Ich" icon={<IconUser />} />

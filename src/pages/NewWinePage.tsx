@@ -248,7 +248,7 @@ export default function NewWinePage() {
               </div>
             )}
             {gq && grapeHits.length === 0 && <div className="text-xs text-muted">Keine passende Rebsorte gefunden. Fehlt eine, kann der Admin sie ergänzen.</div>}
-            <div className="text-xs leading-snug text-muted">Die erste Rebsorte zählt als Hauptrebsorte für Glossar und Decider. Antippen entfernt sie.</div>
+            <div className="text-xs leading-snug text-muted">Die erste Rebsorte zählt als Hauptrebsorte für Glossar und Auswahl. Antippen entfernt sie.</div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

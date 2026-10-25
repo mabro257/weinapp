@@ -97,7 +97,7 @@ export const HELP: Record<TasteKey | 'score', HelpText> = {
     title: 'Gesamtnote',
     what: 'Wie gut dir der Wein gefällt, auf einer Skala bis 100. Es geht um deinen Eindruck, nicht um Preis oder Ruf.',
     how: 'Orientierung: unter 80 eher nicht nochmal, 80–84 gut, 85–89 sehr gut, 90–94 hervorragend, ab 95 außergewöhnlich. Mit − und + feinjustieren.',
-    note: 'Bleib bei deinem eigenen Maßstab, dann werden Statistik und Decider genauer.',
+    note: 'Bleib bei deinem eigenen Maßstab, dann werden Statistik und Auswahl genauer.',
   },
   body: {
     title: 'Körper',

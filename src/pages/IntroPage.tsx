@@ -13,7 +13,7 @@ type Tab = 'suche' | 'decider' | 'freunde' | 'geschmack' | 'ich'
 function MiniNav({ active }: { active: Tab }) {
   const items: [Tab, string, ReactNode][] = [
     ['suche', 'Suche', <IconSearch size={18} />],
-    ['decider', 'Decider', <IconScale size={18} />],
+    ['decider', 'Auswahl', <IconScale size={18} />],
     ['freunde', 'Freunde', <IconUsers size={18} />],
     ['geschmack', 'Geschmack', <IconSpark size={18} />],
     ['ich', 'Ich', <IconUser size={18} />],
@@ -113,7 +113,7 @@ const SLIDES: Slide[] = [
     tab: 'decider',
     body: (
       <p className="m-0">
-        Unsicher zwischen mehreren Weinen, etwa im Restaurant oder im Supermarkt? Füge sie im <B>Decider</B> hinzu. Er zeigt, welcher am besten zu deinem Geschmack passt, und sagt warum.
+        Unsicher zwischen mehreren Weinen, etwa im Restaurant oder im Supermarkt? Füge sie unter <B>Auswahl</B> hinzu. Dort siehst du, welcher am besten zu deinem Geschmack passt, und warum.
       </p>
     ),
   },

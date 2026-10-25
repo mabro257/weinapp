@@ -150,7 +150,7 @@ export default function DeciderPage() {
 
   return (
     <Page>
-      <PageTitle title="Decider" sub={mode === 'tisch' ? 'Welcher Wein schmeckt allen?' : 'Welcher Wein passt am besten zu dir?'} />
+      <PageTitle title="Auswahl" sub={mode === 'tisch' ? 'Welcher Wein schmeckt allen?' : 'Welcher Wein passt am besten zu dir?'} />
       {base.error && <ErrorBox message={base.error} />}
 
       <div className="flex flex-col gap-4 px-4 pt-5">
