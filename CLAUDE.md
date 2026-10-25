@@ -25,6 +25,7 @@ Firmenrechner **ohne Admin-Rechte**: alles portabel in `%LOCALAPPDATA%\weinapp-t
 - **Ein Push = ein Netlify-Deploy (15 von 300 Credits/Monat).** Änderungen sammeln, nicht für jede Kleinigkeit pushen.
 - **SQL-Skripte** führt der Nutzer weiter selbst im Supabase SQL Editor aus (kein automatisches Einspielen). Datenbank-Änderungen immer als neues nummeriertes Skript, nach dem Push mit Klickanleitung.
 - **Nie viele Dateien lokal per Node umschreiben/löschen** (Sophos-Ransomware-Schutz). Massenumwandlungen in Netlify-Build oder GitHub Actions.
+- Commit-Texte immer über eine Datei übergeben (`git commit -F datei`, UTF-8 ohne BOM): Windows PowerShell 5.1 zerlegt Anführungszeichen in `-m "..."`.
 - Zeilenenden: `core.autocrlf=true` (Standard von Git für Windows), Inhalte werden mit LF gespeichert. Neue Dateien als UTF-8 ohne BOM.
 - Firewall-Meldung zu Node.js beim lokalen Testserver: Nutzer soll „Abbrechen" klicken. Testserver: `.claude/launch.json` im Ordner `Claude-Weinapp` (`vite preview` auf Port 4173).
 - Beim Browser-Upload früher verloren gegangen und am 25.10.2026 korrigiert: `.gitignore` lag als `download`, `.env.example` als `env.example` im Repository.
@@ -63,7 +64,9 @@ Firmenrechner **ohne Admin-Rechte**: alles portabel in `%LOCALAPPDATA%\weinapp-t
 
 | `13_dubletten_schneller.sql` | Spalte `wines.match_key` (= token_key aus Name + Weingut, per Trigger) mit GIN-Trigramm-Index; `similar_wine_ids` über diesen Index (60 Kandidaten); `wine_similarity` ohne Einzelbuchstaben im Weingut und Deckel 0,6 bei klar anderem Weingut; Dublette ab 0,92 | SQL Editor, nach 12 (Backfill ca. 1 Min.) |
 
-`05` braucht `num_words` (09) und `match_key`/`token_key` (13). Frische Installation: 01–04, 06–13, dann 05 per Action. Stand 25.10.2026: alles bis Update 9 ist live, alle SQL-Skripte bis 13 sind ausgeführt. Ab jetzt zeigt `git log` den Stand; nur ausgeführte SQL-Skripte beim Nutzer nachfragen.
+| `14_suche_schneller.sql` | Spalte `wines.name_norm` (= `name_norm(name)`: nur Buchstaben/Ziffern, Zahlwörter, Leerzeichen außen) mit Trigramm-Index; `search_wines` neu: exakte Suche zuerst (Kandidaten über Wortanfang im Namen, max. 3.000 je Quelle, plus eigene Weine), unscharfe Suche nur ohne exakten Treffer, Wörter mit 1 Zeichen ignoriert | SQL Editor, nach 13 (Backfill ca. 1 Min.) |
+
+`05` braucht `num_words` (09), `match_key`/`token_key` (13) und `name_norm` (14). Frische Installation: 01–04, 06–14, dann 05 per Action. Suchlaufzeit mit `tools/perf-suche.mjs . mit14` messen (Stand 14: 19 typische Suchen zusammen 1,0 s statt 13,4 s, einzeln 2–255 ms). Stand 25.10.2026: alles bis Update 9 ist live, alle SQL-Skripte bis 13 sind ausgeführt. Ab jetzt zeigt `git log` den Stand; nur ausgeführte SQL-Skripte beim Nutzer nachfragen.
 
 Supabase bricht App-Anfragen nach **8 Sekunden** ab: Funktionen, die über den ganzen Katalog laufen, mit `tools/perf-dubletten.mjs` (voller Katalog in PGlite) messen. Stand Update 9: Dubletten-Prüfung 1,1 s bei 83 Weinen (wächst linear, ca. 13 ms je bewertetem/angelegtem Wein), „Gibt es schon?" 25–80 ms.
 

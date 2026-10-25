@@ -166,6 +166,13 @@ Getestet: Typecheck, Build und im Demo-Modus Datum ändern, Bewertung im Weinabe
 
 Getestet: Laufzeit und Ergebnis mit dem vollen Katalog (106.907 Weine) in PGlite: 13 Paare mit Fehlalarmen in 14,6 s vorher, 3 echte Paare in 1,1 s nachher. Dazu die Dubletten-Tests aus Update 5, der Katalog-Import, Typecheck, Build und im Demo-Modus Decider (doppelte Auswahl, Hinweis ohne Person, Einordnung) und Dubletten-Seite (Paar, danach leer).
 
+## Update 10 (25.10.2026): schnellere Suche, Arbeit per Git
+
+| Thema | Umsetzung |
+| --- | --- |
+| Suche | Gespeicherter, aufbereiteter Weinname mit Index statt Neuberechnung bei jeder Suche; Tippfehler-Suche nur, wenn es keinen exakten Treffer gibt; Suche startet ab 2 Zeichen („Weiter tippen …"). Gemessen mit vollem Katalog: „pinot noir" 1,7 s → 0,09 s, „barolo" 0,4 s → 0,02 s, 19 typische Suchen 13,4 s → 1,0 s. Treffer und Reihenfolge unverändert (Tippfehler, Synonyme, Akzente, Zahlen, eigene Weine zuerst, Dubletten ausgeblendet). |
+| Git | Repository als Klon `weinapp-git`, portable Werkzeuge, Push durch Claude nach Freigabe (siehe CLAUDE.md). `.gitignore`/`.env.example` korrigiert, fehlende Hilfsskripte ergänzt. |
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.

@@ -20,7 +20,8 @@ export function numWords(normalized: string): string {
 
 /** Suchwörter wie in `search_wines`: Ziffern 1–12 werden zum Zahlwort („3 freunde“ → „drei freunde“). */
 export function searchTokens(query: string): string[] {
-  return normalize(query).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(Boolean).map((t) => NUMBERS[t] ?? t)
+  // einzelne Buchstaben zählen nicht (wie in search_wines)
+  return normalize(query).replace(/[^a-z0-9]+/g, ' ').split(' ').filter(Boolean).map((t) => NUMBERS[t] ?? t).filter((t) => t.length >= 2)
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']

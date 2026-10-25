@@ -27,7 +27,8 @@ export default function HomePage() {
     } catch {
       // ignorieren
     }
-    if (!q.trim()) {
+    // Erst ab 2 Zeichen suchen: ein einzelner Buchstabe trifft fast den ganzen Katalog
+    if (q.trim().length < 2) {
       setHits(null)
       return
     }
@@ -78,7 +79,8 @@ export default function HomePage() {
           )}
         </div>
 
-        {q.trim() && (
+        {q.trim().length === 1 && <div className="px-1 text-[13px] text-muted">Weiter tippen, die Suche startet ab 2 Zeichen.</div>}
+        {q.trim().length >= 2 && (
           <div className="flex flex-col rounded-[28px] bg-card px-4 py-2">
             {searchError && <div className="py-3 text-sm font-semibold text-berry-dark">{searchError}</div>}
             {hits === null && !searchError && <div className="py-3 text-sm text-muted">Suche …</div>}

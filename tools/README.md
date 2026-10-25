@@ -14,6 +14,7 @@ Vorher einmalig in diesem Ordner: `npm install @electric-sql/pglite` (für die T
 | `xwines.mjs` | CSV-Parser für X-Wines, `stats`-Auswertung | `node tools/xwines.mjs stats <csv>` |
 | `make-icons.mjs` | erzeugt die PNG-App-Icons | `node tools/make-icons.mjs public` |
 | `test-sql.mjs`, `test-import.mjs`, `test-06.mjs`, `test-08.mjs`, `test-09.mjs`, `test-10.mjs`, `test-11.mjs`, `test-12.mjs` |
+| `perf-suche.mjs`, `test-14.mjs` | Laufzeit der Katalogsuche mit vollem Katalog bzw. Treffer-Regressionstest für 14 | `node tools/perf-suche.mjs . mit14` |
 | `perf-dubletten.mjs` | Laufzeit von Dubletten-Prüfung und „Gibt es schon?" mit vollem Katalog (Supabase-Limit 8 s) | `node tools/perf-dubletten.mjs . mit13` | testen die SQL-Skripte gegen PGlite (Postgres im Prozess) mit nachgebautem Supabase (auth.uid, Rollen, Storage) | `node tools/test-08.mjs .` |
 
 Rohdaten sind nicht im Repository: X-Wines-CSV (Google Drive der Autoren, Ordner „last", Datei `XWines_Full_100K_wines.zip`, CC0) und der Open-Food-Facts-Abruf (`fetch-off2.mjs`).

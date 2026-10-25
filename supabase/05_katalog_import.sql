@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Großer Katalogimport aus X-Wines (CC0, 100.646 Weine) und Open Food Facts (ODbL, ca. 5.900 Weine).
--- Voraussetzung: 09 und 13 sind ausgeführt (num_words, token_key, Spalte match_key).
+-- Voraussetzung: 09, 13 und 14 sind ausgeführt (num_words, token_key, name_norm, Spalten match_key und name_norm).
 -- NICHT im SQL Editor ausführen: Dieses Skript läuft über die GitHub Action
 -- „Katalog-Import" (psql), weil die Daten für den Editor zu groß sind.
 -- Kann gefahrlos wiederholt werden: bereits importierte Weine werden übersprungen.
@@ -48,7 +48,8 @@ on conflict do nothing;
 -- 5. Suchtext für alle importierten Weine in einem Schritt berechnen (inkl. Rebsorten und Synonyme)
 update public.wines w
 set search_text = public.num_words(public.norm(concat_ws(' ', w.name, w.winery, w.region, w.country, gt.txt))),
-    match_key = public.token_key(concat_ws(' ', w.name, w.winery))
+    match_key = public.token_key(concat_ws(' ', w.name, w.winery)),
+    name_norm = public.name_norm(w.name)
 from (
   select w2.id,
          (select string_agg(g.name || ' ' || array_to_string(g.synonyms, ' '), ' ')
