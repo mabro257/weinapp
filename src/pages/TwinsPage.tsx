@@ -135,7 +135,7 @@ export default function TwinsPage() {
         )}
 
         <div className="px-1 text-xs leading-normal text-muted">
-          So rechnet die App: Abstand eurer Noten bei gemeinsam bewerteten Weinen (zählt zu drei Vierteln) plus Ähnlichkeit eurer Geschmacksprofile. Erst ab {MIN_COMMON} gemeinsamen Weinen gibt es einen Prozentwert.
+          Je ähnlicher ihr dieselben Weine bewertet, desto höher der Wert. Ab {MIN_COMMON} gemeinsam bewerteten Weinen.
         </div>
       </div>
     </Page>

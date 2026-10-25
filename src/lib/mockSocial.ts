@@ -44,7 +44,7 @@ const nameOf = (id: string) => (id === DEMO_ME.id ? DEMO_ME.displayName : DEMO_F
 
 type Social = Pick<
   Api,
-  | 'myGroups' | 'groupMembers' | 'createGroup' | 'joinGroup' | 'leaveGroup' | 'friends' | 'friendRatings'
+  | 'myGroups' | 'groupMembers' | 'createGroup' | 'joinGroup' | 'leaveGroup' | 'renameGroup' | 'removeMember' | 'deleteGroup' | 'friends' | 'friendRatings'
   | 'recommendations' | 'recommend' | 'markRecommendationsSeen' | 'deleteRecommendation'
   | 'tastings' | 'tasting' | 'createTasting' | 'setTastingDate' | 'setTastingParticipants' | 'setTastingWineVisible' | 'addTastingWine' | 'removeTastingWine' | 'revealTasting' | 'deleteTasting' | 'tastingRatings'
 >
@@ -87,6 +87,24 @@ export function createSocialMock(ctx: Ctx): Social {
     async leaveGroup(groupId) {
       const g = s().groups.find((x) => x.id === groupId)
       if (g) g.members = g.members.filter((m) => m.userId !== DEMO_ME.id)
+      ctx.save()
+      await ctx.wait(null)
+    },
+    async renameGroup(groupId, name) {
+      const g = s().groups.find((x) => x.id === groupId)
+      if (g) g.name = name.trim()
+      ctx.save()
+      await ctx.wait(null)
+    },
+    async removeMember(groupId, userId) {
+      const g = s().groups.find((x) => x.id === groupId)
+      if (g) g.members = g.members.filter((m) => m.userId !== userId)
+      ctx.save()
+      await ctx.wait(null)
+    },
+    async deleteGroup(groupId) {
+      s().groups = s().groups.filter((x) => x.id !== groupId)
+      s().tastings = s().tastings.filter((t) => t.groupId !== groupId)
       ctx.save()
       await ctx.wait(null)
     },

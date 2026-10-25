@@ -80,6 +80,10 @@ export interface Api {
   createGroup(name: string): Promise<Group>
   joinGroup(code: string): Promise<number>
   leaveGroup(groupId: number): Promise<void>
+  /** Gruppen-Admin: umbenennen, Mitglied entfernen, Gruppe löschen (mit allen Weinabenden der Gruppe) */
+  renameGroup(groupId: number, name: string): Promise<void>
+  removeMember(groupId: number, userId: string): Promise<void>
+  deleteGroup(groupId: number): Promise<void>
   friends(): Promise<Friend[]>
   /** geteilte Bewertungen aller Freunde aus den eigenen Gruppen */
   friendRatings(): Promise<FriendRating[]>

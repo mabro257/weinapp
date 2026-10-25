@@ -6,12 +6,17 @@ import { mean } from '../lib/stats'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
 import { Avatar, Card, ErrorBox, HeroBack, Loading, Page } from '../components/ui'
+import { useConfirm } from '../components/Confirm'
 
 export default function GroupPage() {
   const id = Number(useParams().id)
   const navigate = useNavigate()
   const { profile, grapes } = useApp()
   const [copied, setCopied] = useState(false)
+  const [renaming, setRenaming] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [adminError, setAdminError] = useState<string | null>(null)
+  const [ask, dialog] = useConfirm()
   const res = useAsync(async () => {
     const [groups, members, friendRatings, mine, friends] = await Promise.all([
       api.myGroups(),
@@ -75,10 +80,37 @@ export default function GroupPage() {
     }
   }
   const leave = async () => {
-    if (!confirm(`Gruppe „${group.name}" wirklich verlassen? Die Mitglieder sehen deine Bewertungen danach nicht mehr.`)) return
+    if (!(await ask({ title: 'Gruppe verlassen?', text: `Die Mitglieder von „${group.name}" sehen deine Bewertungen danach nicht mehr.`, confirm: 'Verlassen', danger: true }))) return
     await api.leaveGroup(group.id)
     navigate('/freunde', { replace: true })
   }
+  const run = async (fn: () => Promise<void>) => {
+    setAdminError(null)
+    try {
+      await fn()
+    } catch (e) {
+      setAdminError(e instanceof Error ? e.message : String(e))
+    }
+  }
+  const rename = () =>
+    run(async () => {
+      if (!newName.trim()) return
+      await api.renameGroup(group.id, newName)
+      setRenaming(false)
+      res.reload()
+    })
+  const removeMember = (userId: string, name: string) =>
+    run(async () => {
+      if (!(await ask({ title: `${name} entfernen?`, text: `${name} ist danach nicht mehr in „${group.name}" und sieht eure Bewertungen nicht mehr. Mit dem Einladungslink kann ${name} wieder beitreten.`, confirm: 'Entfernen', danger: true }))) return
+      await api.removeMember(group.id, userId)
+      res.reload()
+    })
+  const removeGroup = () =>
+    run(async () => {
+      if (!(await ask({ title: 'Gruppe löschen?', text: `„${group.name}" und alle Weinabende der Gruppe werden für alle Mitglieder gelöscht. Die Bewertungen selbst bleiben bei jedem erhalten.`, confirm: 'Gruppe löschen', danger: true }))) return
+      await api.deleteGroup(group.id)
+      navigate('/freunde', { replace: true })
+    })
 
   return (
     <Page>
@@ -114,6 +146,11 @@ export default function GroupPage() {
                   <span className="text-[13px] text-muted">{m.role === 'admin' ? 'Admin · ' : ''}{n} {n === 1 ? 'Bewertung' : 'Bewertungen'}{me ? '' : ' sichtbar'}</span>
                 </span>
                 {!me && <span className="text-sm font-extrabold text-berry">{match === null || match === undefined ? '–' : `${match} %`}</span>}
+                {group.isAdmin && !me && (
+                  <button type="button" onClick={() => removeMember(m.userId, m.displayName)} aria-label={`${m.displayName} aus der Gruppe entfernen`} className="flex min-h-9 items-center rounded-full bg-chip px-3 text-xs font-bold text-ink-2">
+                    Entfernen
+                  </button>
+                )}
               </div>
             )
           })}
@@ -138,8 +175,35 @@ export default function GroupPage() {
         <Link to={`/weinabend/neu?gruppe=${group.id}`} className="flex h-14 items-center justify-center rounded-full bg-berry text-base font-bold text-white no-underline hover:bg-berry-dark">
           Weinabend mit dieser Gruppe starten
         </Link>
+        {group.isAdmin && (
+          <Card className="flex flex-col gap-3">
+            <h2 className="m-0 text-lg font-bold">Gruppe verwalten</h2>
+            {renaming ? (
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  rename()
+                }}
+              >
+                <label htmlFor="gruppenname" className="sr-only">Neuer Gruppenname</label>
+                <input id="gruppenname" value={newName} maxLength={60} onChange={(e) => setNewName(e.target.value)} className="h-11 min-w-0 flex-1 rounded-full border-0 bg-chip px-4 text-base outline-none" />
+                <button type="submit" disabled={!newName.trim()} className="h-11 rounded-full bg-berry px-4 text-[13px] font-bold text-white disabled:opacity-50">Speichern</button>
+              </form>
+            ) : (
+              <button type="button" onClick={() => { setNewName(group.name); setRenaming(true) }} className="flex min-h-11 items-center justify-between text-left text-[15px] font-semibold">
+                Umbenennen
+                <span className="text-[13px] text-muted">{group.name}</span>
+              </button>
+            )}
+            <div className="text-xs text-muted">Mitglieder entfernst du oben in der Liste mit „Entfernen".</div>
+            {adminError && <div role="alert" className="text-sm font-semibold text-berry-dark">{adminError}</div>}
+            <button type="button" onClick={removeGroup} className="min-h-11 self-start text-sm font-bold text-berry-dark">Gruppe löschen</button>
+          </Card>
+        )}
         <button type="button" onClick={leave} className="h-12 text-sm font-bold text-muted">Gruppe verlassen</button>
       </div>
+      {dialog}
     </Page>
   )
 }

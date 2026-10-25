@@ -6,6 +6,7 @@ import { downloadCsv, useAsync } from '../lib/util'
 import { resetDemo } from '../lib/mockApi'
 import { useApp } from '../App'
 import { Card, ErrorBox, Page, PageTitle, WineThumb } from '../components/ui'
+import { useConfirm } from '../components/Confirm'
 import { IconBookmark, IconDownload, IconGlass, IconInfo, IconLogout, IconMedal, IconNext } from '../components/Icons'
 
 export default function HistoryPage() {
@@ -14,6 +15,7 @@ export default function HistoryPage() {
   const saved = useAsync(() => api.savedWines(), [])
   const [editName, setEditName] = useState(false)
   const [name, setName] = useState(profile.displayName)
+  const [ask, dialog] = useConfirm()
 
   const all = res.data ?? []
   const avg = mean(all.map((r) => r.score))
@@ -130,13 +132,13 @@ export default function HistoryPage() {
           </div>
           <button type="button" onClick={() => downloadCsv(all)} disabled={!all.length} className="flex min-h-[52px] w-full items-center gap-3 border-t border-line py-3.5 text-left text-[15px] font-semibold disabled:opacity-50">
             <IconDownload size={20} className="text-ink-2" />
-            Meine Bewertungen exportieren (CSV)
+            Meine Bewertungen als Excel-Tabelle herunterladen
           </button>
           {api.mode === 'demo' && (
             <button
               type="button"
-              onClick={() => {
-                if (confirm('Demo-Daten auf den Ausgangszustand zurücksetzen?')) {
+              onClick={async () => {
+                if (await ask({ title: 'Demo-Daten zurücksetzen?', text: 'Alle Änderungen im Demo-Modus gehen verloren.', confirm: 'Zurücksetzen' })) {
                   resetDemo()
                   location.reload()
                 }
@@ -156,6 +158,7 @@ export default function HistoryPage() {
           Weindaten: X-Wines (CC0) und Open Food Facts (openfoodfacts.org, Lizenz ODbL). Glossartexte: eigene Texte.
         </p>
       </div>
+      {dialog}
     </Page>
   )
 }

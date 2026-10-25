@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { api } from './lib/api'
 import type { Grape, Profile } from './lib/types'
-import { Loading } from './components/ui'
+import { IconGlass } from './components/Icons'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
 import WinePage from './pages/WinePage'
@@ -78,7 +78,15 @@ export default function App() {
     }
   }, [tick])
 
-  if (profile === undefined) return <Loading />
+  if (profile === undefined)
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-hero text-white" aria-busy="true">
+        <span className="flex size-20 items-center justify-center rounded-[26px] bg-white/15">
+          <IconGlass size={40} />
+        </span>
+        <span className="text-xl font-extrabold">WineWithFriends</span>
+      </div>
+    )
   if (profile === null) return <LoginPage />
 
   return (

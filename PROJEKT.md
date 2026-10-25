@@ -181,6 +181,22 @@ Getestet: Laufzeit und Ergebnis mit dem vollen Katalog (106.907 Weine) in PGlite
 | Bedienung | Weiter/Zurück, Wischen, Pfeiltasten, „Überspringen", Fortschrittspunkte, Knopfleiste unten fixiert. |
 | Wann | Automatisch einmal für neue Nutzer, egal auf welcher Seite sie starten (`IntroGate` in `App.tsx`), danach zurück zu dieser Seite. Beim Beitritt per Einladungslink erst nach dem Beitritt, danach zur Gruppe. Merker im Profil (`profiles.intro_seen_at`, Skript `15_einfuehrung.sql`, `mark_intro_seen()`), gilt also auf allen Geräten. Bestandsnutzer mit mindestens einer Bewertung gelten als „gesehen". Erneut abspielbar unter Ich → „Einführung ansehen" (danach zurück zu „Ich"). |
 
+## Update 12 (25.10.2026): UX-Durchgang (21 Punkte)
+
+| Bereich | Umsetzung |
+| --- | --- |
+| Bewerten | Weinseite: „Bewerten" bzw. „Nochmal bewerten" oben im Weinkopf. Bewertungsseite: Speichern unten fest; Geschmack, Ort/Anlass, Notiz, Foto unter „Mehr angeben" eingeklappt; bei unveränderter Note (85) Rückfrage vor dem Speichern; Tannin nur bei Rotwein; Datum „Getrunken am", nie in der Zukunft. |
+| Eigene Bewertungen | Auf der Weinseite antippen bzw. „Ändern" öffnet „Bewertung ändern"; Aktionen beschriftet („Für Gruppen sichtbar"/„Privat", „Ändern", „Löschen"). |
+| Weinabend | Aktualisiert sich alle 15 s und beim Zurückkehren in die App (neue Weine, Fortschritt, Aufdecken). Vergangene offene Abende: „Gestern" bzw. „Seit X Tagen offen", beim Gastgeber Hinweis mit „Bewertungen jetzt aufdecken". |
+| Gruppen | Admin: umbenennen, Mitglieder entfernen, Gruppe löschen (Weinabende der Gruppe werden mitgelöscht, Bewertungen bleiben). Keine Datenbankänderung nötig, Rechte bestanden seit 08. |
+| Name | Erste Einführung fragt den Anzeigenamen ab („Überspringen" springt beim ersten Mal zur Namensseite). |
+| Geschmack | Profil nach Weiß/Rot getrennt (Tannin nur bei Rot); Matrix erst ab der ersten Bewertung; „Probier mal" mit Begründung „weil dir X gefällt" und Tipp aus den Gruppen (bester Wein der Sorte, den Freunde mögen, du nicht kennst). |
+| Auswahl | Hinweis für Nutzer ohne Bewertungen. |
+| Texte | Einheitlich „Bewertung" (nicht Verkostung/Verlauf); Rebsorten-Seite ohne Median/Spanne; Zwillinge ohne Rechenformel; Suchbeispiel „Lugana, Riesling, Barolo"; Export „als Excel-Tabelle"; seltene Rebsorten ohne Admin-Hinweis. |
+| Dialoge | Eigene Bestätigung im App-Stil (`components/Confirm.tsx`, `useConfirm`) statt Browser-Dialog. Startbildschirm mit Logo statt „Lädt …". |
+
+Getestet: Typecheck, Build, Demo-Modus für alle Punkte außer der automatischen Aktualisierung im Weinabend (im Demo-Modus ändert niemand sonst etwas; per Code geprüft).
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.

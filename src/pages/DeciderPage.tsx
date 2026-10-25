@@ -238,6 +238,11 @@ export default function DeciderPage() {
           )}
           {notice && <div role="alert" className="mt-2 rounded-[14px] bg-rose-badge px-3.5 py-2.5 text-[13px] font-semibold text-berry-dark">{notice}</div>}
           {items.length < 2 && <div className="pt-3 text-[13px] text-muted">Mindestens zwei Weine hinzufügen, von Karte, Regal oder Liste. Nicht im Katalog? Rebsorte wählen.</div>}
+          {base.data && base.data.mine.length === 0 && (
+            <div className="mt-3 rounded-[14px] bg-chip px-3.5 py-2.5 text-[13px] leading-snug text-ink-2">
+              Du hast noch keine Weine bewertet. Bis dahin stützt sich die Auswahl nur auf deine Gruppen. Mit jeder Bewertung wird sie persönlicher.
+            </div>
+          )}
         </Card>
 
         {mode === 'tisch' && tableResults.length > 0 && (

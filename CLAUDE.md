@@ -41,6 +41,7 @@ Firmenrechner **ohne Admin-Rechte**: alles portabel in `%LOCALAPPDATA%\weinapp-t
 - Ohne `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` läuft die App im **Demo-Modus** (`src/lib/mockApi.ts`, `mockSocial.ts`, Beispieldaten `demoData.ts`, localStorage-Schlüssel `weinapp-demo-v2`). Beide Umsetzungen erfüllen das Interface `Api` in `src/lib/api.ts`. Neue Funktionen immer in beiden umsetzen.
 - Logik: `decider.ts` (regelbasiert), `stats.ts` (Boxplot, QUARTILE.INC, Tukey ab 10), `taste.ts` (Profil und Matrix nach **neutraler Einordnung**: Katalog-Körper/Säure, sonst Rebsorte, nie die eigene Angabe; Top 5; Stilgruppen; Empfehlungen), `naming.ts` (Namensregel), Hilfetexte `HELP` in `text.ts`, `social.ts` (Zwilling, Gruppen-Decider, Abzeichen), `grapesData.ts` (134 Glossar-Rebsorten, Quelle für `02_glossar.sql`).
 - Seiten in `src/pages`, Navigation: Suche, Auswahl, Freunde, Geschmack, Ich. **„Auswahl" ist der sichtbare Name des früheren „Decider"** (seit 25.10.2026); im Code heißen Datei, Route und Funktionen weiter `decider`.
+- Begriffe: immer **„Bewertung"** (nicht Verkostung/Verlauf), Datum „Getrunken am". Bestätigungen über `useConfirm()` aus `components/Confirm.tsx`, nie `window.confirm`.
 - Einführung `IntroPage.tsx` (`/intro`): bei neuen Funktionen prüfen, ob sie dort erwähnt werden sollten. Regel des Nutzers: nichts als bekannt voraussetzen, jeden genannten Begriff kurz erklären, so wenig Text wie möglich.
 
 ## Datenbank (`supabase/`)

@@ -464,6 +464,21 @@ export function createSupabaseApi(url: string, key: string): Api {
       const { error } = await sb.from('group_members').delete().eq('group_id', groupId).eq('user_id', id)
       fail(error)
     },
+    async renameGroup(groupId, name) {
+      const { data, error } = await sb.from('groups').update({ name: name.trim() }).eq('id', groupId).select('id')
+      fail(error)
+      if (!data?.length) throw new Error('Nur der Admin der Gruppe kann sie umbenennen.')
+    },
+    async removeMember(groupId, userId) {
+      const { data, error } = await sb.from('group_members').delete().eq('group_id', groupId).eq('user_id', userId).select('user_id')
+      fail(error)
+      if (!data?.length) throw new Error('Nur der Admin der Gruppe kann Mitglieder entfernen.')
+    },
+    async deleteGroup(groupId) {
+      const { data, error } = await sb.from('groups').delete().eq('id', groupId).select('id')
+      fail(error)
+      if (!data?.length) throw new Error('Nur der Admin der Gruppe kann sie löschen.')
+    },
     async friends() {
       const id = await userId()
       const { data, error } = await sb.from('group_members').select('user_id, profiles(display_name)').neq('user_id', id)

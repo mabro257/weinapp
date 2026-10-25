@@ -3,11 +3,12 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import type { WineHit } from '../lib/types'
 import { mean } from '../lib/stats'
-import { formatDate, tastingWhen } from '../lib/text'
+import { daysUntil, formatDate, tastingWhen } from '../lib/text'
 import { useAsync } from '../lib/util'
 import { useApp } from '../App'
 import { Avatar, Card, ErrorBox, HeroBack, Loading, Page, Switch } from '../components/ui'
 import { IconCheck, IconClose, IconEye, IconEyeOff, IconTrash } from '../components/Icons'
+import { useConfirm } from '../components/Confirm'
 
 /** Gastgeber: festlegen, wer aus der Gruppe beim Abend dabei ist */
 function Participants({ tastingId, groupId, hostId, current, onDone }: { tastingId: number; groupId: number; hostId: string; current: string[]; onDone: () => void }) {
@@ -143,6 +144,24 @@ export default function TastingPage() {
   const [editDate, setEditDate] = useState(false)
   const [newDate, setNewDate] = useState('')
   const [dateError, setDateError] = useState<string | null>(null)
+  const [ask, dialog] = useConfirm()
+
+  // Laufender Abend: still aktualisieren, damit neu freigeschaltete Weine, Fortschritt und das Aufdecken
+  // ohne Neuladen erscheinen (alle 15 Sekunden und beim Zurückkehren in die App)
+  const open = res.data?.tasting.status === 'offen'
+  const reload = res.reload
+  useEffect(() => {
+    if (!open) return
+    const t = setInterval(() => {
+      if (document.visibilityState === 'visible') reload()
+    }, 15000)
+    const onVisible = () => document.visibilityState === 'visible' && reload()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(t)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [open, reload])
 
   useEffect(() => {
     if (!q.trim()) {
@@ -223,7 +242,7 @@ export default function TastingPage() {
     res.reload()
   }
   const reveal = async () => {
-    if (!confirm('Bewertungen jetzt aufdecken? Danach sehen alle die Noten und alle Weine des Abends.')) return
+    if (!(await ask({ title: 'Bewertungen aufdecken?', text: 'Danach sehen alle die Noten und alle Weine des Abends. Bewerten ist dann nicht mehr möglich.', confirm: 'Aufdecken' }))) return
     await api.revealTasting(tasting.id)
     res.reload()
   }
@@ -299,6 +318,7 @@ export default function TastingPage() {
           <Link to="/abzeichen" className="flex h-12 items-center justify-center rounded-full border-2 border-line bg-card text-[15px] font-bold text-ink no-underline">Meine Abzeichen ansehen</Link>
           {isHost && <DeleteTasting tastingId={tasting.id} revealed onDone={() => navigate('/freunde', { replace: true })} />}
         </div>
+        {dialog}
       </Page>
     )
   }
@@ -333,6 +353,15 @@ export default function TastingPage() {
       </div>
 
       <div className="relative -mt-10 flex flex-col gap-4 px-4">
+        {isHost && daysUntil(tasting.eventDate) < 0 && wines.length > 0 && (
+          <Card className="flex flex-col gap-3 border-2 border-berry">
+            <div className="text-[15px] font-bold">Der Abend war am {formatDate(tasting.eventDate)}.</div>
+            <div className="text-[13px] leading-snug text-ink-2">Solange du nicht aufdeckst, sieht niemand die Ergebnisse. Bist du fertig?</div>
+            <button type="button" onClick={reveal} className="min-h-11 self-start rounded-full bg-berry px-5 text-sm font-bold text-white">
+              Bewertungen jetzt aufdecken
+            </button>
+          </Card>
+        )}
         {editPeople ? (
           <Participants
             tastingId={tasting.id}
@@ -437,7 +466,7 @@ export default function TastingPage() {
           )}
         </Card>
 
-        <div className="rounded-[22px] bg-card px-4 py-3.5 text-[13px] leading-normal text-ink-2">Jede Bewertung landet automatisch in deinem Verlauf, mit Datum und Anlass „{tasting.title}".</div>
+        <div className="rounded-[22px] bg-card px-4 py-3.5 text-[13px] leading-normal text-ink-2">Deine Bewertungen erscheinen auch unter Ich → Meine Bewertungen, mit Datum und Anlass „{tasting.title}".</div>
 
         {isHost ? (
           <button type="button" onClick={reveal} disabled={wines.length === 0} className="flex h-14 items-center justify-center rounded-full bg-berry text-base font-bold text-white disabled:opacity-50">
@@ -448,6 +477,7 @@ export default function TastingPage() {
         )}
         {isHost && <DeleteTasting tastingId={tasting.id} revealed={false} onDone={() => navigate('/freunde', { replace: true })} />}
       </div>
+      {dialog}
     </Page>
   )
 }

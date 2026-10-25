@@ -69,7 +69,7 @@ export default function HomePage() {
             autoComplete="off"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="z. B. Chianti, Riesling, Musterhof"
+            placeholder="z. B. Lugana, Riesling, Barolo"
             className="h-11 min-w-0 flex-1 border-0 bg-transparent text-base font-semibold outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {q && (

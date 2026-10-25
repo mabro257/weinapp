@@ -34,12 +34,12 @@ export default function GrapePage() {
   if (s?.kind === 'box') {
     verdict =
       s.iqr <= 4
-        ? `Die mittlere Hälfte deiner Bewertungen liegt zwischen ${Math.round(s.q1)} und ${Math.round(s.q3)}. Das ist eng: ${grape.name} trifft deinen Geschmack sehr zuverlässig.`
+        ? `Meist gibst du ${grape.name} zwischen ${Math.round(s.q1)} und ${Math.round(s.q3)} Punkte. ${grape.name} gefällt dir also sehr verlässlich.`
         : s.iqr >= 7
-          ? `Die mittlere Hälfte deiner Bewertungen reicht von ${Math.round(s.q1)} bis ${Math.round(s.q3)}. Bei ${grape.name} schwankt es stark, es kommt sehr auf den einzelnen Wein an.`
-          : `Die mittlere Hälfte deiner Bewertungen liegt zwischen ${Math.round(s.q1)} und ${Math.round(s.q3)}.`
+          ? `Meist gibst du ${grape.name} zwischen ${Math.round(s.q1)} und ${Math.round(s.q3)} Punkte. Das schwankt stark, es kommt sehr auf den einzelnen Wein an.`
+          : `Meist gibst du ${grape.name} zwischen ${Math.round(s.q1)} und ${Math.round(s.q3)} Punkte.`
   } else if (s) {
-    verdict = `Erst ${s.n} ${s.n === 1 ? 'Bewertung' : 'Bewertungen'}. Ab 5 Bewertungen zeigt die App einen Boxplot.`
+    verdict = `Erst ${s.n} ${s.n === 1 ? 'Bewertung' : 'Bewertungen'}. Ab 5 Bewertungen siehst du hier, wie verlässlich dir die Sorte gefällt.`
   }
 
   return (
@@ -64,7 +64,7 @@ export default function GrapePage() {
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[26px] font-extrabold text-berry">{s.kind === 'box' ? Math.round(s.median) : s.median === null ? '–' : Math.round(s.median)}</span>
-                  <span className="text-xs font-semibold text-muted">Median</span>
+                  <span className="text-xs font-semibold text-muted">typische Note</span>
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[26px] font-extrabold">{s.n}</span>
@@ -72,7 +72,7 @@ export default function GrapePage() {
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[26px] font-extrabold">{s.kind === 'box' ? `${s.min}–${s.max}` : `${s.values[0]}–${s.values[s.values.length - 1]}`}</span>
-                  <span className="text-xs font-semibold text-muted">Spanne</span>
+                  <span className="text-xs font-semibold text-muted">niedrigste bis höchste</span>
                 </div>
               </div>
               <div className="flex flex-col gap-1">
@@ -91,7 +91,7 @@ export default function GrapePage() {
           {grape.short ? (
             <p className="m-0 text-[15px] leading-relaxed">{grape.short}</p>
           ) : (
-            <p className="m-0 text-[15px] leading-relaxed text-muted">Für diese seltene Rebsorte gibt es noch keinen Glossartext. Der Admin kann ihn in Supabase in der Tabelle „grapes" ergänzen.</p>
+            <p className="m-0 text-[15px] leading-relaxed text-muted">Für diese seltene Rebsorte gibt es noch keine Beschreibung.</p>
           )}
           {grape.aromas.length > 0 && (
             <div className="flex flex-col gap-2">
@@ -143,7 +143,7 @@ export default function GrapePage() {
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <div className="text-[15px] font-bold">{w.name}</div>
                   <div className="truncate text-[13px] text-muted">
-                    {[w.winery, `${w.scores.length} ${w.scores.length === 1 ? 'Verkostung' : 'Verkostungen'}`].filter(Boolean).join(' · ')}
+                    {[w.winery, `${w.scores.length} ${w.scores.length === 1 ? 'Bewertung' : 'Bewertungen'}`].filter(Boolean).join(' · ')}
                   </div>
                 </div>
               </Link>

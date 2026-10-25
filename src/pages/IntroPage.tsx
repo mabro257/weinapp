@@ -80,7 +80,7 @@ const SLIDES: Slide[] = [
     body: (
       <>
         <p className="m-0">
-          Auf der Seite eines Weins tippst du auf <B>Neue Bewertung</B> und gibst eine Note von 1 bis 100. Sie zeigt nur, wie gut der Wein <B>dir</B> gefällt.
+          Auf der Seite eines Weins tippst du auf <B>Bewerten</B> und gibst eine Note von 1 bis 100. Sie zeigt nur, wie gut der Wein <B>dir</B> gefällt.
         </p>
         <div className="flex flex-wrap gap-1.5 text-[13px] font-bold">
           <span className="rounded-full bg-chip px-2.5 py-1 text-ink-2">unter 80: eher nicht</span>
@@ -166,8 +166,19 @@ export default function IntroPage() {
   const last = i === SLIDES.length - 1
   const s = SLIDES[i]
 
+  // Beim ersten Mal: Anzeigenamen abfragen (Standard ist der Teil der E-Mail vor dem @)
+  const askName = !profile.introSeen
+  const [name, setName] = useState(profile.displayName)
+
   const finish = async () => {
     introDone.current = true
+    if (askName && name.trim() && name.trim() !== profile.displayName) {
+      try {
+        await api.updateDisplayName(name.trim())
+      } catch {
+        // nicht kritisch: lässt sich unter „Ich" ändern
+      }
+    }
     if (!profile.introSeen) {
       try {
         await api.markIntroSeen()
@@ -205,7 +216,7 @@ export default function IntroPage() {
           {i + 1} von {SLIDES.length}
         </span>
         {!last && (
-          <button type="button" onClick={finish} className="min-h-11 px-2 text-sm font-bold text-berry">
+          <button type="button" onClick={() => (askName ? setI(SLIDES.length - 1) : finish())} className="min-h-11 px-2 text-sm font-bold text-berry">
             Überspringen
           </button>
         )}
@@ -215,6 +226,20 @@ export default function IntroPage() {
         <span className="flex size-[88px] items-center justify-center self-center rounded-[28px] bg-hero text-white">{s.icon}</span>
         <h1 className="m-0 text-center text-[26px] leading-tight font-extrabold">{s.title}</h1>
         <div className="flex flex-col gap-3.5 text-[15px] leading-normal text-ink-2">{s.body}</div>
+        {last && askName && (
+          <div className="flex flex-col gap-1.5 rounded-[22px] bg-card p-4">
+            <label htmlFor="intro-name" className="text-[15px] font-bold">Wie sollen dich deine Freunde sehen?</label>
+            <input
+              id="intro-name"
+              value={name}
+              maxLength={40}
+              autoComplete="nickname"
+              onChange={(e) => setName(e.target.value)}
+              className="h-12 rounded-full border-0 bg-chip px-[18px] text-base font-semibold outline-none"
+            />
+            <span className="text-xs text-muted">Dein Name in Gruppen und bei Weinabenden. Später unter „Ich" änderbar.</span>
+          </div>
+        )}
         {s.tab && (
           <div className="flex flex-col gap-1.5">
             <span className="text-center text-xs font-semibold text-muted">Zu finden in der Leiste unten:</span>

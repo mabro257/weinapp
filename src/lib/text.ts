@@ -71,15 +71,21 @@ export const PRICE_LABEL = ['', '€', '€€', '€€€', '€€€€']
 /** Ladenpreis je Preisklasse */
 export const PRICE_RANGE = ['', 'bis 5 €', '5 bis 10 €', '10 bis 15 €', 'über 15 €']
 
-/** Zeitpunkt eines laufenden Weinabends: „Heute“, „Morgen“, „Noch 3 Tage“, danach „Läuft“ */
-export function tastingWhen(eventDate: string): string {
-  const [y, m, d] = eventDate.split('-').map(Number)
+/** Tage bis zum Datum (negativ = vergangen) */
+export function daysUntil(isoDate: string): number {
+  const [y, m, d] = isoDate.split('-').map(Number)
   const t = new Date()
-  const days = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())) / 86400000)
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())) / 86400000)
+}
+
+/** Zeitpunkt eines noch nicht aufgedeckten Weinabends: „Noch 3 Tage“, „Morgen“, „Heute“, „Gestern“, „Seit 5 Tagen offen“ */
+export function tastingWhen(eventDate: string): string {
+  const days = daysUntil(eventDate)
   if (days > 1) return `Noch ${days} Tage`
   if (days === 1) return 'Morgen'
   if (days === 0) return 'Heute'
-  return 'Läuft'
+  if (days === -1) return 'Gestern'
+  return `Seit ${-days} Tagen offen`
 }
 
 /** Erklärungen für das Fragezeichen bei der Bewertung */

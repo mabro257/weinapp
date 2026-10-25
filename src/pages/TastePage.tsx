@@ -20,13 +20,32 @@ function cellColor(avg: number | null, hasGrapes: boolean) {
 
 export default function TastePage() {
   const { grapes } = useApp()
-  const res = useAsync(() => api.myRatings(), [])
+  const res = useAsync(async () => {
+    const [mine, friends] = await Promise.all([api.myRatings(), api.friendRatings().catch(() => [])])
+    return { mine, friends }
+  }, [])
   const [color, setColor] = useState<'rot' | 'weiss'>('weiss')
   const [selected, setSelected] = useState<string | null>(null)
-  const mine = res.data ?? []
+  const mine = useMemo(() => res.data?.mine ?? [], [res.data])
 
   const data = useMemo(() => {
-    const pref = preference(mine, grapes)
+    const pref = preference(mine, grapes, color)
+    // Konkrete Tipps zu den vorgeschlagenen Rebsorten: Weine, die Freunde mögen und du noch nicht kennst
+    const known = new Set(mine.map((r) => r.wineId))
+    const friendTip = new Map<number, { wineId: number; name: string; avg: number }>()
+    const byWine = new Map<number, { name: string; grape: number | null; scores: number[] }>()
+    for (const r of res.data?.friends ?? []) {
+      if (known.has(r.wineId)) continue
+      const cur = byWine.get(r.wineId) ?? { name: r.wineName, grape: r.mainGrapeId, scores: [] }
+      cur.scores.push(r.score)
+      byWine.set(r.wineId, cur)
+    }
+    for (const [wineId, w] of byWine) {
+      const avg = w.scores.reduce((a, b) => a + b, 0) / w.scores.length
+      if (w.grape === null || avg < 85) continue
+      const best = friendTip.get(w.grape)
+      if (!best || avg > best.avg) friendTip.set(w.grape, { wineId, name: w.name, avg })
+    }
     const rows = distribution(mine, grapes)
     const topGrapes = rows.filter((r) => r.id !== null && r.s.n >= 2).slice(0, 3)
     const byRegion = new Map<string, number[]>()
@@ -39,8 +58,8 @@ export default function TastePage() {
     const byId = new Map(grapes.map((g) => [g.id, g]))
     const reds = mine.filter((r) => r.mainGrapeId !== null && byId.get(r.mainGrapeId)?.color === 'rot').length
     const whites = mine.filter((r) => r.mainGrapeId !== null && byId.get(r.mainGrapeId)?.color === 'weiss').length
-    return { pref, rows, topGrapes, topRegions, reds, whites, recs: recommendations(mine, grapes), cells: matrix(mine, grapes, color), top: topWines(mine), value: priceValue(mine) }
-  }, [mine, grapes, color])
+    return { pref, rows, topGrapes, topRegions, reds, whites, recs: recommendations(mine, grapes), friendTip, cells: matrix(mine, grapes, color), top: topWines(mine), value: priceValue(mine) }
+  }, [mine, grapes, color, res.data])
 
   if (res.loading && !res.data) return <Page><Loading /></Page>
 
@@ -60,12 +79,19 @@ export default function TastePage() {
         ) : (
           <Card className="flex flex-col gap-[18px]">
             <CardTitle right={<Hint>Skala 1–5</Hint>}>Dein Profil</CardTitle>
-            {(['body', 'acidity', 'tannin'] as TasteKey[]).map((k) =>
-              data.pref[k] === null ? null : <TasteBar key={k} label={TASTE[k].label} word={tasteWord(k, data.pref[k])} mine={data.pref[k]} community={null} />,
+            <Segmented label="Weinfarbe" value={color} onChange={(v) => { if (v) { setColor(v); setSelected(null) } }} options={[{ value: 'weiss', label: 'Weiß' }, { value: 'rot', label: 'Rot' }]} />
+            {data.pref.favorites === 0 ? (
+              <div className="text-[13px] text-muted">Noch keine Lieblingsweine in {color === 'rot' ? 'Rot' : 'Weiß'}.</div>
+            ) : (
+              <>
+                {((color === 'rot' ? ['body', 'acidity', 'tannin'] : ['body', 'acidity']) as TasteKey[]).map((k) =>
+                  data.pref[k] === null ? null : <TasteBar key={k} label={TASTE[k].label} word={tasteWord(k, data.pref[k])} mine={data.pref[k]} community={null} />,
+                )}
+                <div className="text-[13px] leading-normal text-muted">
+                  So sind deine Lieblingsweine in {color === 'rot' ? 'Rot' : 'Weiß'} (ab Note {Math.round(data.pref.threshold)}).
+                </div>
+              </>
             )}
-            <div className="text-[13px] leading-normal text-muted">
-              So sind deine Lieblingsweine (ab Note {Math.round(data.pref.threshold)}).
-            </div>
             {total > 0 && (
               <div className="flex flex-col gap-1.5">
                 <div className="text-[13px] font-bold text-muted">Rot oder Weiß</div>
@@ -116,7 +142,7 @@ export default function TastePage() {
                   <ScoreBadge score={Math.round(w.avg)} size={44} />
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="text-[15px] font-bold">{w.name}</span>
-                    <span className="truncate text-[13px] text-muted">{[w.winery, w.n > 1 ? `${w.n} Verkostungen` : null].filter(Boolean).join(' · ')}</span>
+                    <span className="truncate text-[13px] text-muted">{[w.winery, w.n > 1 ? `${w.n} Bewertungen` : null].filter(Boolean).join(' · ')}</span>
                   </span>
                   <IconNext size={18} className="flex-none text-muted" />
                 </Link>
@@ -182,6 +208,7 @@ export default function TastePage() {
           </Card>
         )}
 
+        {mine.length > 0 && (
         <Card className="flex flex-col gap-4">
           <CardTitle>Geschmacksmatrix</CardTitle>
           <div className="text-[13px] leading-normal text-ink-2">
@@ -257,20 +284,32 @@ export default function TastePage() {
             </div>
           )}
         </Card>
+        )}
 
         {data.recs.length > 0 && (
           <Card className="pb-1">
             <CardTitle>Probier mal</CardTitle>
             <div className="pt-2">
-              {data.recs.map((r) => (
-                <Link key={r.grape.id} to={`/rebsorten/${r.grape.id}`} className="flex min-h-11 items-center justify-between gap-3 border-t border-line py-3 text-ink no-underline">
-                  <span className="flex min-w-0 flex-col gap-0.5">
-                    <span className="text-[15px] font-bold">{r.grape.name}</span>
-                    <span className="text-[13px] text-muted">{[styleOf(r.grape), r.reason].filter(Boolean).join(' · ')}</span>
-                  </span>
-                  <IconNext size={18} className="flex-none text-muted" />
-                </Link>
-              ))}
+              {data.recs.map((r) => {
+                const tip = data.friendTip.get(r.grape.id)
+                return (
+                  <div key={r.grape.id} className="flex flex-col gap-1 border-t border-line py-3">
+                    <Link to={`/rebsorten/${r.grape.id}`} className="flex min-h-11 items-center justify-between gap-3 text-ink no-underline">
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[15px] font-bold">{r.grape.name}</span>
+                        <span className="text-[13px] text-muted">{[styleOf(r.grape), r.reason].filter(Boolean).join(' · ')}</span>
+                      </span>
+                      <IconNext size={18} className="flex-none text-muted" />
+                    </Link>
+                    {tip && (
+                      <Link to={`/wein/${tip.wineId}`} className="flex items-center justify-between gap-2 rounded-[14px] bg-rose-badge px-3 py-2 text-[13px] text-berry-dark no-underline">
+                        <span className="min-w-0 truncate"><b>Tipp aus deinen Gruppen:</b> {tip.name}</span>
+                        <span className="flex-none font-extrabold">Ø {Math.round(tip.avg)}</span>
+                      </Link>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </Card>
         )}

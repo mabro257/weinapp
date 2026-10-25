@@ -182,7 +182,7 @@ export function recommendations(mine: RatingWithWine[], grapes: Grape[], limit =
         best = l
       }
     }
-    if (best && bestD <= 2) out.push({ grape: g, distance: bestD, reason: `ähnliches Profil wie ${best.name}, die du magst` })
+    if (best && bestD <= 2) out.push({ grape: g, distance: bestD, reason: `weil dir ${best.name} gefällt` })
   }
   return out.sort((a, b) => a.distance - b.distance || a.grape.name.localeCompare(b.grape.name, 'de')).slice(0, limit)
 }

@@ -9,6 +9,7 @@ import { useApp } from '../App'
 import { Card, CardTitle, ErrorBox, Hint, HeroBack, Loading, Page, ScoreRing, Segmented, TagChip, TasteBar } from '../components/ui'
 import { IconBookmark, IconLock, IconPlus, IconSend, IconTrash, IconUsers } from '../components/Icons'
 import RecommendSheet from '../components/RecommendSheet'
+import { useConfirm } from '../components/Confirm'
 
 export default function WinePage() {
   const id = Number(useParams().id)
@@ -17,6 +18,7 @@ export default function WinePage() {
   const [showAll, setShowAll] = useState(false)
   const [recommendOpen, setRecommendOpen] = useState(false)
   const [priceError, setPriceError] = useState<string | null>(null)
+  const [ask, dialog] = useConfirm()
 
   const [savedOverride, setSavedOverride] = useState<boolean | null>(null)
   const res = useAsync(async () => {
@@ -62,7 +64,7 @@ export default function WinePage() {
   }
 
   const remove = async (ratingId: number) => {
-    if (!confirm('Diese Bewertung wirklich löschen?')) return
+    if (!(await ask({ title: 'Bewertung löschen?', text: 'Die Bewertung wird endgültig entfernt.', confirm: 'Löschen', danger: true }))) return
     await api.deleteRating(ratingId)
     res.reload()
   }
@@ -108,6 +110,10 @@ export default function WinePage() {
           </div>
           {wine.labelUrl && <img src={wine.labelUrl} alt={`Etikett ${wine.name}`} className="h-[84px] w-16 flex-none rounded-[14px] border-2 border-white/30 object-cover" />}
         </div>
+        <Link to={`/wein/${wine.id}/bewerten`} className="mt-2 flex h-12 items-center justify-center gap-2 rounded-full bg-white text-[15px] font-extrabold text-hero no-underline">
+          <IconPlus size={20} />
+          {view.rows.length || res.data.mine.length ? 'Nochmal bewerten' : 'Bewerten'}
+        </Link>
       </div>
 
       <div className="relative -mt-12 flex flex-col gap-4 px-4">
@@ -117,7 +123,7 @@ export default function WinePage() {
             <div>
               <div className="text-[13px] font-semibold text-muted">Meine Ø</div>
               <div className="text-[17px] font-bold">
-                {view.my === null ? 'noch nicht bewertet' : `${view.my} · ${view.rows.length} ${view.rows.length === 1 ? 'Verkostung' : 'Verkostungen'}`}
+                {view.my === null ? 'noch nicht bewertet' : `${view.my} · ${view.rows.length} ${view.rows.length === 1 ? 'Bewertung' : 'Bewertungen'}`}
               </div>
             </div>
             <div className="h-px bg-line" />
@@ -197,41 +203,50 @@ export default function WinePage() {
               ) : undefined
             }
           >
-            Meine Verkostungen
+            Meine Bewertungen
           </CardTitle>
           <div className="pt-3">
-            {view.rows.length === 0 && <div className="border-t border-line py-4 text-sm text-muted">Noch keine eigene Verkostung{vintage !== 'alle' ? ' in diesem Jahrgang' : ''}.</div>}
+            {view.rows.length === 0 && <div className="border-t border-line py-4 text-sm text-muted">Noch keine eigene Bewertung{vintage !== 'alle' ? ' in diesem Jahrgang' : ''}.</div>}
             {shown.map((r) => (
-              <div key={r.id} className="flex gap-3.5 border-t border-line py-4">
-                <div className="flex size-14 flex-none items-center justify-center rounded-[18px] bg-rose-badge text-[22px] font-extrabold text-berry">{r.score}</div>
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <div className="text-sm font-bold">
-                    {formatDate(r.tastedOn)}
-                    {r.vintage ? ` · Jahrgang ${r.vintage}` : ''}
-                  </div>
-                  {r.tags.length > 0 && <div className="flex flex-wrap gap-1.5">{r.tags.map((t) => <TagChip key={t} label={t} />)}</div>}
-                  {r.note && <div className="text-[13px] leading-snug text-muted">{r.note}</div>}
-                </div>
-                <button
-                  type="button"
-                  aria-label={r.shared ? 'Für Gruppen sichtbar, tippen für privat' : 'Privat, tippen um für Gruppen sichtbar zu machen'}
-                  onClick={() => toggleShared(r.id, !r.shared)}
-                  className={`flex size-11 flex-none items-center justify-center rounded-full ${r.shared ? 'text-muted' : 'bg-rose-badge text-berry'}`}
+              <div key={r.id} className="flex flex-col gap-2 border-t border-line py-4">
+                <Link
+                  to={`/wein/${wine.id}/bewerten?bewertung=${r.id}${r.tastingId ? `&abend=${r.tastingId}` : ''}`}
+                  aria-label={`Bewertung vom ${formatDate(r.tastedOn)} ändern`}
+                  className="flex gap-3.5 text-ink no-underline"
                 >
-                  {r.shared ? <IconUsers size={18} /> : <IconLock size={18} />}
-                </button>
-                <button type="button" aria-label="Bewertung löschen" onClick={() => remove(r.id)} className="flex size-11 flex-none items-center justify-center rounded-full text-muted">
-                  <IconTrash size={18} />
-                </button>
+                  <div className="flex size-14 flex-none items-center justify-center rounded-[18px] bg-rose-badge text-[22px] font-extrabold text-berry">{r.score}</div>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <div className="text-sm font-bold">
+                      {formatDate(r.tastedOn)}
+                      {r.vintage ? ` · Jahrgang ${r.vintage}` : ''}
+                    </div>
+                    {r.tags.length > 0 && <div className="flex flex-wrap gap-1.5">{r.tags.map((t) => <TagChip key={t} label={t} />)}</div>}
+                    {r.note && <div className="text-[13px] leading-snug text-muted">{r.note}</div>}
+                  </div>
+                </Link>
+                <div className="flex flex-wrap items-center gap-2 pl-[70px]">
+                  <button
+                    type="button"
+                    aria-pressed={!r.shared}
+                    onClick={() => toggleShared(r.id, !r.shared)}
+                    className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-bold ${r.shared ? 'bg-chip text-ink-2' : 'bg-rose-badge text-berry-dark'}`}
+                  >
+                    {r.shared ? <IconUsers size={14} /> : <IconLock size={14} />}
+                    {r.shared ? 'Für Gruppen sichtbar' : 'Privat'}
+                  </button>
+                  <Link to={`/wein/${wine.id}/bewerten?bewertung=${r.id}${r.tastingId ? `&abend=${r.tastingId}` : ''}`} className="inline-flex min-h-9 items-center rounded-full bg-chip px-3 text-xs font-bold text-ink-2 no-underline">
+                    Ändern
+                  </Link>
+                  <button type="button" onClick={() => remove(r.id)} className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-chip px-3 text-xs font-bold text-ink-2">
+                    <IconTrash size={14} />
+                    Löschen
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </Card>
 
-        <Link to={`/wein/${wine.id}/bewerten`} className="flex h-14 items-center justify-center gap-2 rounded-full bg-berry text-base font-bold text-white no-underline hover:bg-berry-dark">
-          <IconPlus size={20} />
-          Neue Bewertung
-        </Link>
         {wine.editable && (
           <Link to={`/wein/${wine.id}/bearbeiten`} className="flex min-h-11 items-center justify-center text-sm font-bold text-berry no-underline">
             Angaben zum Wein korrigieren
@@ -239,6 +254,7 @@ export default function WinePage() {
         )}
       </div>
       {recommendOpen && <RecommendSheet wine={wine} myScore={view.my} onClose={() => setRecommendOpen(false)} />}
+      {dialog}
     </Page>
   )
 }
