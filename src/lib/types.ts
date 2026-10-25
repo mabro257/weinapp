@@ -139,6 +139,8 @@ export interface Profile {
   id: string
   displayName: string
   isAdmin: boolean
+  /** Einführung schon gesehen (sonst wird sie einmal automatisch gezeigt) */
+  introSeen: boolean
 }
 
 // ---------------------------------------------------------------------

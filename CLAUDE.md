@@ -41,6 +41,7 @@ Firmenrechner **ohne Admin-Rechte**: alles portabel in `%LOCALAPPDATA%\weinapp-t
 - Ohne `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` läuft die App im **Demo-Modus** (`src/lib/mockApi.ts`, `mockSocial.ts`, Beispieldaten `demoData.ts`, localStorage-Schlüssel `weinapp-demo-v2`). Beide Umsetzungen erfüllen das Interface `Api` in `src/lib/api.ts`. Neue Funktionen immer in beiden umsetzen.
 - Logik: `decider.ts` (regelbasiert), `stats.ts` (Boxplot, QUARTILE.INC, Tukey ab 10), `taste.ts` (Profil und Matrix nach **neutraler Einordnung**: Katalog-Körper/Säure, sonst Rebsorte, nie die eigene Angabe; Top 5; Stilgruppen; Empfehlungen), `naming.ts` (Namensregel), Hilfetexte `HELP` in `text.ts`, `social.ts` (Zwilling, Gruppen-Decider, Abzeichen), `grapesData.ts` (134 Glossar-Rebsorten, Quelle für `02_glossar.sql`).
 - Seiten in `src/pages`, Navigation: Suche, Decider, Freunde, Geschmack, Ich.
+- Einführung `IntroPage.tsx` (`/intro`): bei neuen Funktionen prüfen, ob sie dort erwähnt werden sollten. Regel des Nutzers: nichts als bekannt voraussetzen, jeden genannten Begriff kurz erklären, so wenig Text wie möglich.
 
 ## Datenbank (`supabase/`)
 
@@ -66,7 +67,9 @@ Firmenrechner **ohne Admin-Rechte**: alles portabel in `%LOCALAPPDATA%\weinapp-t
 
 | `14_suche_schneller.sql` | Spalte `wines.name_norm` (= `name_norm(name)`: nur Buchstaben/Ziffern, Zahlwörter, Leerzeichen außen) mit Trigramm-Index; `search_wines` neu: exakte Suche zuerst (Kandidaten über Wortanfang im Namen, max. 3.000 je Quelle, plus eigene Weine), unscharfe Suche nur ohne exakten Treffer, Wörter mit 1 Zeichen ignoriert | SQL Editor, nach 13 (Backfill ca. 1 Min.) |
 
-`05` braucht `num_words` (09), `match_key`/`token_key` (13) und `name_norm` (14). Frische Installation: 01–04, 06–14, dann 05 per Action. Suchlaufzeit mit `tools/perf-suche.mjs . mit14` messen (Stand 14: 19 typische Suchen zusammen 1,0 s statt 13,4 s, einzeln 2–255 ms). Stand 25.10.2026: alles bis Update 9 ist live, alle SQL-Skripte bis 13 sind ausgeführt. Ab jetzt zeigt `git log` den Stand; nur ausgeführte SQL-Skripte beim Nutzer nachfragen.
+| `15_einfuehrung.sql` | `profiles.intro_seen_at`, Bestandsnutzer mit Bewertung = gesehen, `mark_intro_seen()` | SQL Editor |
+
+`05` braucht `num_words` (09), `match_key`/`token_key` (13) und `name_norm` (14). Frische Installation: 01–04, 06–15, dann 05 per Action. Suchlaufzeit mit `tools/perf-suche.mjs . mit14` messen (Stand 14: 19 typische Suchen zusammen 1,0 s statt 13,4 s, einzeln 2–255 ms). Stand 25.10.2026: alles bis Update 9 ist live, alle SQL-Skripte bis 13 sind ausgeführt. Ab jetzt zeigt `git log` den Stand; nur ausgeführte SQL-Skripte beim Nutzer nachfragen.
 
 Supabase bricht App-Anfragen nach **8 Sekunden** ab: Funktionen, die über den ganzen Katalog laufen, mit `tools/perf-dubletten.mjs` (voller Katalog in PGlite) messen. Stand Update 9: Dubletten-Prüfung 1,1 s bei 83 Weinen (wächst linear, ca. 13 ms je bewertetem/angelegtem Wein), „Gibt es schon?" 25–80 ms.
 

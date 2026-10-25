@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { api } from './lib/api'
 import type { Grape, Profile } from './lib/types'
 import { Loading } from './components/ui'
@@ -22,6 +22,7 @@ import GrapePage from './pages/GrapePage'
 import HistoryPage from './pages/HistoryPage'
 import DuplicatesPage from './pages/DuplicatesPage'
 import RatingsPage from './pages/RatingsPage'
+import IntroPage, { introDone } from './pages/IntroPage'
 
 interface AppState {
   profile: Profile
@@ -35,6 +36,21 @@ export function useApp(): AppState {
   const v = useContext(Ctx)
   if (!v) throw new Error('useApp außerhalb von App')
   return v
+}
+
+/**
+ * Zeigt neuen Nutzern einmal die Einführung (Merker im Profil). Während des Beitritts per Einladungslink
+ * wird gewartet; danach kehrt die Einführung zur Seite zurück, auf der der Nutzer war (z. B. die Gruppe).
+ */
+function IntroGate() {
+  const { profile } = useApp()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  useEffect(() => {
+    if (profile.introSeen || introDone.current || pathname === '/intro' || pathname.startsWith('/beitreten/')) return
+    navigate('/intro', { replace: true, state: { from: pathname } })
+  }, [profile.introSeen, pathname, navigate])
+  return null
 }
 
 export default function App() {
@@ -73,6 +89,7 @@ export default function App() {
             Demo-Modus mit Beispieldaten · Änderungen bleiben nur auf diesem Gerät
           </div>
         )}
+        <IntroGate />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/wein/neu" element={<NewWinePage />} />
@@ -93,6 +110,7 @@ export default function App() {
           <Route path="/rebsorten/:id" element={<GrapePage />} />
           <Route path="/ich" element={<HistoryPage />} />
           <Route path="/ich/bewertungen" element={<RatingsPage />} />
+          <Route path="/intro" element={<IntroPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

@@ -36,6 +36,7 @@ export interface Api {
   verifyCode(email: string, code: string): Promise<void>
   signOut(): Promise<void>
   updateDisplayName(name: string): Promise<void>
+  markIntroSeen(): Promise<void>
 
   // Katalog
   searchWines(query: string): Promise<WineHit[]>

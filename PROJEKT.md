@@ -173,6 +173,14 @@ Getestet: Laufzeit und Ergebnis mit dem vollen Katalog (106.907 Weine) in PGlite
 | Suche | Gespeicherter, aufbereiteter Weinname mit Index statt Neuberechnung bei jeder Suche; Tippfehler-Suche nur, wenn es keinen exakten Treffer gibt; Suche startet ab 2 Zeichen („Weiter tippen …"). Gemessen mit vollem Katalog: „pinot noir" 1,7 s → 0,09 s, „barolo" 0,4 s → 0,02 s, 19 typische Suchen 13,4 s → 1,0 s. Treffer und Reihenfolge unverändert (Tippfehler, Synonyme, Akzente, Zahlen, eigene Weine zuerst, Dubletten ausgeblendet). |
 | Git | Repository als Klon `weinapp-git`, portable Werkzeuge, Push durch Claude nach Freigabe (siehe CLAUDE.md). `.gitignore`/`.env.example` korrigiert, fehlende Hilfsskripte ergänzt. |
 
+## Update 11 (25.10.2026): Einführung
+
+| Thema | Umsetzung |
+| --- | --- |
+| Inhalt | 7 kurze Seiten (`src/pages/IntroPage.tsx`, Route `/intro`): Willkommen, Wein finden, Wein bewerten (Notenskala), Geschmack, Decider, Freunde (Gruppe, Weinabend, Empfehlen), Ich. Jeder erwähnte Begriff wird im Satz erklärt (Weingut, Rebsorte, Jahrgang, Gruppe, Gastgeber, Merkliste, Abzeichen). Pro Seite eine Mini-Navigationsleiste, die zeigt, wo die Funktion zu finden ist. |
+| Bedienung | Weiter/Zurück, Wischen, Pfeiltasten, „Überspringen", Fortschrittspunkte, Knopfleiste unten fixiert. |
+| Wann | Automatisch einmal für neue Nutzer, egal auf welcher Seite sie starten (`IntroGate` in `App.tsx`), danach zurück zu dieser Seite. Beim Beitritt per Einladungslink erst nach dem Beitritt, danach zur Gruppe. Merker im Profil (`profiles.intro_seen_at`, Skript `15_einfuehrung.sql`, `mark_intro_seen()`), gilt also auf allen Geräten. Bestandsnutzer mit mindestens einer Bewertung gelten als „gesehen". Erneut abspielbar unter Ich → „Einführung ansehen" (danach zurück zu „Ich"). |
+
 ## Offene Punkte
 
 - Glossartexte prüfen. Weitere Rebsorten ergänzen, sobald der Katalog importiert ist.

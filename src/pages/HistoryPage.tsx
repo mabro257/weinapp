@@ -6,7 +6,7 @@ import { downloadCsv, useAsync } from '../lib/util'
 import { resetDemo } from '../lib/mockApi'
 import { useApp } from '../App'
 import { Card, ErrorBox, Page, PageTitle, WineThumb } from '../components/ui'
-import { IconBookmark, IconDownload, IconGlass, IconLogout, IconMedal, IconNext } from '../components/Icons'
+import { IconBookmark, IconDownload, IconGlass, IconInfo, IconLogout, IconMedal, IconNext } from '../components/Icons'
 
 export default function HistoryPage() {
   const { profile, refreshProfile } = useApp()
@@ -48,6 +48,15 @@ export default function HistoryPage() {
         <Link to="/abzeichen" className="flex items-center gap-3.5 rounded-[22px] bg-card px-4 py-3.5 text-ink no-underline">
           <span className="flex size-10 flex-none items-center justify-center rounded-full bg-berry text-white"><IconMedal size={22} /></span>
           <span className="flex-1 text-[15px] font-bold">Meine Abzeichen</span>
+          <IconNext size={18} className="text-muted" />
+        </Link>
+
+        <Link to="/intro" state={{ from: '/ich' }} className="flex items-center gap-3.5 rounded-[22px] bg-card px-4 py-3.5 text-ink no-underline">
+          <span className="flex size-10 flex-none items-center justify-center rounded-full bg-rose-badge text-berry"><IconInfo size={22} /></span>
+          <span className="flex flex-1 flex-col gap-0.5">
+            <span className="text-[15px] font-bold">Einführung ansehen</span>
+            <span className="text-xs text-muted">So funktioniert die App, in einer Minute</span>
+          </span>
           <IconNext size={18} className="text-muted" />
         </Link>
 

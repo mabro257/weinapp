@@ -154,12 +154,16 @@ export function createSupabaseApi(url: string, key: string): Api {
       if (!s.session) return null
       const { data, error } = await sb
         .from('profiles')
-        .select('id, display_name, is_admin')
+        .select('id, display_name, is_admin, intro_seen_at')
         .eq('id', s.session.user.id)
         .maybeSingle()
       fail(error)
-      if (!data) return { id: s.session.user.id, displayName: s.session.user.email ?? 'Ich', isAdmin: false }
-      return { id: data.id, displayName: data.display_name, isAdmin: data.is_admin }
+      if (!data) return { id: s.session.user.id, displayName: s.session.user.email ?? 'Ich', isAdmin: false, introSeen: false }
+      return { id: data.id, displayName: data.display_name, isAdmin: data.is_admin, introSeen: data.intro_seen_at !== null }
+    },
+    async markIntroSeen() {
+      const { error } = await sb.rpc('mark_intro_seen')
+      fail(error)
     },
     onAuthChange(cb) {
       const { data } = sb.auth.onAuthStateChange(() => cb())

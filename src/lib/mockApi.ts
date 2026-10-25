@@ -23,6 +23,8 @@ interface Store {
   merged?: Record<number, number>
   /** als „kein Duplikat" markierte Paare „a-b" */
   dismissed?: string[]
+  /** Einführung gesehen (fehlt = ja) */
+  introSeen?: boolean
 }
 
 /** Doppelt angelegter Wein, damit die Dubletten-Prüfung im Demo-Modus etwas zeigt */
@@ -96,7 +98,13 @@ export function createMockApi(): Api {
     mode: 'demo',
 
     async getProfile() {
-      return wait(store.signedIn ? { ...DEMO_ME, displayName: store.displayName } : null)
+      // Demo: Einführung gilt als gesehen, solange der Merker fehlt (Beispielnutzer hat schon bewertet)
+      return wait(store.signedIn ? { ...DEMO_ME, displayName: store.displayName, introSeen: store.introSeen ?? true } : null)
+    },
+    async markIntroSeen() {
+      store.introSeen = true
+      save()
+      await wait(null)
     },
     onAuthChange(cb) {
       listeners.add(cb)
